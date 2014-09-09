@@ -1,0 +1,321 @@
+.search-viewport {
+	float:left;
+	width: 1024px !important;	
+}
+
+ul#search-form {
+	float: left;
+	margin: 0;
+	padding: 0;
+}
+
+.main-search {
+	position: relative;
+	margin-left:765px;
+	top: 57%;
+	width: 300px;
+	height: 30px;
+}
+
+.search-label {
+	float:left;
+	background-color: black;
+	color: white;
+	height: 26px;
+	width: 58px;	
+	
+}
+
+.search-label p {
+	margin: 0;
+	padding: 0;
+	font-size: 0.78em;
+	padding: 4px;
+		padding-top: 6px;
+}
+
+.search-title {
+  float: left;
+  /*padding: 15px 0 0 0;*/
+  color: black;
+  font-weight: bold;
+  font-size: 16px;
+  font-weight: 400;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  width: 100%;
+  margin: 0;
+  margin-bottom: 1%;
+}
+
+p.search-snippet {
+	line-height: 16px;
+	letter-spacing: 0.7px;
+	width: 100%;
+	display: inline-block;
+	float: left;
+	margin-top: 0;
+	font-size: 0.8em;
+	color: gray;
+	
+}
+
+.replies {
+	float:left;	
+	width:100%;
+	height: 20px;
+	font-size: 0.75em;
+	margin-bottom: 2%;
+}
+
+.replies p {
+	margin: 0;
+	padding: 0;
+	margin-bottom: 3px;
+}
+
+.reply-thread {
+	margin-right: 8px;
+}
+
+.image {
+	width: 30%;
+	float: left;
+	margin-right:6%;
+}
+
+.result-text {
+	width: 64%;
+	float: left;
+}
+
+p.search-snippet-image {
+	line-height: 16px;
+	letter-spacing: 0.7px;
+	width: 100%;
+	display: inline-block;
+	float: left;
+	margin-top: 0;
+	font-size: 0.8em;
+	color: gray;
+	
+}
+
+.results-contain {
+	float:left;
+	height:100%;
+	width:65%;
+}
+
+.controls {
+	float:left;
+	width:35%;
+	height:100%;
+}
+
+img.result-image {
+	width: 100%;
+	display: inline-block;
+	float: left;
+	margin-right: 3%;
+}
+
+div.search-result {
+	margin-top: 6%;
+	width: 100%;
+	height: auto;
+	float: left;
+	border-bottom: 1px solid #ebebe9;
+}
+
+h2.current-search {
+	display: inline-block;
+	position: relative;
+	margin-left: 2%;
+	margin-top: 0;
+	margin-bottom: 8px;
+	font-weight: bold;
+	font-size: 1.3em;
+}
+
+ul.current-search {
+	position: relative;
+	margin-left: 0%;
+	margin-top: 3%;
+	display: inline-block;
+}
+
+#result a {
+  margin-right: 5px;
+}
+
+#navigation {
+  border-bottom: 1px solid #000;
+}
+
+div.pager {
+	float: left;
+	width: 50%;
+	color: gray;
+	font-size:0.8em;
+}
+
+div.pager p {
+	margin-top: -10px;
+	margin-bottom: 5px;
+	/*font-size: 0.8em;*/
+}
+
+ul#pager {
+	margin: 0;
+	padding :0;
+}
+
+#pager,
+#pager-header {
+  /*display: inline;*/
+  /*margin-left: 10px;*/
+  margin-top:16px;
+  position:relative;
+}
+#pager li,
+.links li {
+  list-style-type: none;
+  display: inline;
+  margin-left: 2%;
+}
+.current-selection {
+  position:absolute;
+  top: 185px;
+  left: 920px;
+  /*padding: 10px 15px 0;*/
+}
+
+ul#selection {
+	width: 1024px;
+	margin: 0;
+	padding: 0;
+}
+
+ul#selection li {
+  list-style-type: none;
+  /*color: black;*/
+  display: inline-block;
+  margin-right: 3%;
+  /*font-size: 0.8em;  */
+}
+
+ul#selection li a {
+	color: gray;
+}
+
+#docs {
+  padding-top: 1px;
+}
+
+span.date {
+	font-weight: bold;
+	font-weight: 600;
+}
+.date-label {
+	
+}
+.date-contain {
+	float: left;
+	margin-top: 146px;
+	margin-left: 50px;
+}
+.date-text {
+	font-weight: 100;
+	margin-bottom: 13px;
+	font-size: 0.8em;
+}
+.ui-autocomplete {
+	z-index: 3 !important;
+}
+
+/* left */
+
+.left {
+  float: left;
+  width: 390px;
+  padding: 0 0 10px 10px;
+}
+.left h2 {
+  clear: left;
+  padding-top: 20px;
+  color: #333;
+  font-size: 13px;
+}
+#search-form input {
+  width: 180px;
+  height: 20px !important;
+}
+#calendar {
+  width: 160px;
+}
+#search_help {
+  font-size: 80%;
+}
+.tagcloud {
+  /*padding: 10px 15px 0;*/
+  position:absolute;
+  width: 310px;
+  height: 150px;
+}
+.tagcloud_item {
+  float: left;
+  display: block;
+  /*margin-right: 4px;*/
+  color: #6998f0;
+  padding: 2px;
+}
+.tagcloud_item:hover {
+  color: #f00;
+}
+
+/* tagcloud */
+.tag-cloud {
+	float: left;
+	margin-left: 50px;
+	margin-top: 20px;
+
+	
+}	
+a.tagcloud_size_0 {
+font-size: 40%;
+}
+a.tagcloud_size_1 {
+font-size: 50%;
+}
+a.tagcloud_size_2 {
+font-size: 60%;
+}Rst
+a.tagcloud_size_3 {
+font-size: 70%;
+}
+a.tagcloud_size_4 {
+font-size: 80%;
+}
+a.tagcloud_size_5 {
+font-size: 90%;
+}
+a.tagcloud_size_6 {
+font-size: 100%;
+}
+a.tagcloud_size_7 {
+font-size: 110%
+}
+a.tagcloud_size_8 {
+font-size: 120%;
+}
+a.tagcloud_size_9 {
+font-size: 130%;
+}
+a.tagcloud_size_10 {
+font-size: 140%;
+}
+
+.more {
+	color: blue;
+}
