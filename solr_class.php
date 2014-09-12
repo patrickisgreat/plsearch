@@ -37,6 +37,37 @@
 		  return implode(' ',$U);
 		}
 
+		// Linkify youtube URLs which are not already links.
+		function extractYoutubeID($text) {
+		    $text = preg_replace('~
+		        # Match non-linked youtube URL in the wild. (Rev:20130823)
+		        https?://         # Required scheme. Either http or https.
+		        (?:[0-9A-Z-]+\.)? # Optional subdomain.
+		        (?:               # Group host alternatives.
+		          youtu\.be/      # Either youtu.be,
+		        | youtube         # or youtube.com or
+		          (?:-nocookie)?  # youtube-nocookie.com
+		          \.com           # followed by
+		          \S*             # Allow anything up to VIDEO_ID,
+		          [^\w\s-]       # but char before ID is non-ID char.
+		        )                 # End host alternatives.
+		        ([\w-]{11})      # $1: VIDEO_ID is exactly 11 chars.
+		        (?=[^\w-]|$)     # Assert next char is non-ID or EOS.
+		        (?!               # Assert URL is not pre-linked.
+		          [?=&+%\w.-]*    # Allow URL (query) remainder.
+		          (?:             # Group pre-linked alternatives.
+		            [\'"][^<>]*>  # Either inside a start tag,
+		          | </a>          # or inside <a> element text contents.
+		          )               # End recognized pre-linked alts.
+		        )                 # End negative lookahead assertion.
+		        [?=&+%\w.-]*        # Consume any URL (query) remainder.
+		        ~ix', 
+		        '<a href="http://www.youtube.com/watch?v=$1">YouTube link: $1</a>',
+		        $text);
+		    return $text;
+		}
+
+
 		function arr_to_solr_doc($doc){
 			$count = count($doc['pagetext']);
 		    $count = $count-1;
@@ -89,7 +120,6 @@
 				foreach ($pagetext as $field_name => $value){
 
 					//if ($field_name != 'pagetext') continue;
-					
 					switch($field_name){
 						case 'cat_id':
 							$highestCat = max(explode(",", $value));
@@ -99,10 +129,11 @@
 								case 3011:
 									$catPath = 'c_row_lg';
 									break;
+								case 3100:
+									//could use something here to know if its a video????
 								case 1103:
 								case 1400:
 								case 3000:
-								case 3100:
 								case 3200:
 								case 3210:
 								case 3220:
@@ -113,18 +144,22 @@
 									$catPath = 'hero_sm';
 
 							}
-							echo $highestCat;
+							//echo $highestCat;
 							break;
 						case 'element':
 							//  Check type for nested arrays
 			    			if (is_array($value)){
 
-			    				http://www.mercdes-amg.com/privatelounge/' .$value .'h2ero_sm/01.jpg';
+			    				//http://www.mercdes-amg.com/privatelounge/' .$value .'h2ero_sm/01.jpg';
 
 			    				if($value[0]!=''){
 			        				$frontEndImagePath = 'http://www.mercedes-amg.com/privatelounge/'.$value[0]  . $catPath .'/01.jpg';
 			        			}
 			        			//  Scan through inner loop
+
+			        			//print_r($value);
+
+
 			        			foreach ($value as $k => $v) {
 			            			
 			            			//set values accordingly before they go off to solr
@@ -134,9 +169,26 @@
 									$re1='(Array)';
 
 									$value =preg_replace($re1, "", $value);
-									//echo $value .'hero_sm/01.jpg';
-				
+									//echo $value .'hero_sm/01.jpg';				
 			        			}
+
+			        			// ==== \/
+			        			// this where I left off.. only need to extract the youtube id then set it below
+			        			/*
+			        			//find the string
+			        			echo $this->extractYoutubeID($value);
+			        			//set it to the xml
+			        			if(array_key_exists(1,$value)){
+							    	$newPageTextNode = $dom->createElement('field');
+							    	$newPageTextNode->setAttribute("name", 'video_url');
+							    	$newPageTextNode->nodeValue = $value[1];
+						    		$node->appendChild($newPageTextNode);
+			        			}
+			        			*/
+			        			//above is where the youtube id is added to the xml document
+
+			        			// ==== /\
+
 			        		} else {
 			        			if($value!=''){
 			        				//echo ('running up here');
@@ -189,7 +241,6 @@
 					//create new node for each field in $doc
 			    	
 			    	//solr needs very strict encoding and escaping
-			    	
 			    	$value = htmlspecialchars($value);
 			    	$value = utf8_encode($value);
 
@@ -280,11 +331,12 @@
 			
 			//gimme the xml -- building on each execution
 			umask();
+
 			$dom->save('storage.xml');
 			
 			//DEPRECATED
 			//print_r($dom);
-			//die();
+			die();
 			//echo ("<br><br><br><br><br>\n\r\n\r\n\r\n\r\n\r");
 			//return sprintf('<add><doc>%s</doc></add>',$fields);
 			//$sending = true;
