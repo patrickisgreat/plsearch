@@ -4,8 +4,8 @@
 require_once('solr_class.php');
 
 //instatiate solr
-//$solr = new Solr('http://patrickisgreat.me:8983/solr/privatelounge/');
-$solr = new Solr('http://patrickisgreat.me:8983/solr/pl2/');
+$solr = new Solr('http://patrickisgreat.me:8983/solr/privatelounge/');
+//$solr = new Solr('http://patrickisgreat.me:8983/solr/pl2/');
 
 //set up the connection obj
 //$link = mysql_connect('localhost', 'vb_admin', 'Vb4AmG$');
@@ -36,9 +36,9 @@ $result = mysql_query('
 		p.pagetext, 
 		p.allowsmilie,
 		p.visible,
-
+		pc.cat_id, 
 		
-		GROUP_CONCAT(DISTINCT pc.cat_id) as cat_id,
+		GROUP_CONCAT(DISTINCT pc.cat_id) as cat_ids,
 
 
 		GROUP_CONCAT(DISTINCT pe.post_type) as post_type, 
@@ -59,7 +59,6 @@ $result = mysql_query('
 
 		p.attach
 	
-
 	FROM thread AS th
 		
 	JOIN post as p ON p.threadid = th.threadid
@@ -68,12 +67,12 @@ $result = mysql_query('
 	LEFT JOIN post_region AS pr ON pr.post_id = p.postid
 	LEFT JOIN attachment AS at ON at.contentid = p.postid
 
-WHERE ( pe.post_type = 1 OR pe.post_type IS NULL )
+WHERE (pe.post_type = 1 OR pe.post_type IS NULL)
 
 GROUP BY p.postid
 
 ORDER BY th.threadid, p.postid DESC
-LIMIT 0, 35000');
+');
 
 //WHERE th.threadid IN (36571)
 
@@ -307,6 +306,7 @@ while ($row = mysql_fetch_assoc($result)) {
 			case '4051':
 			case '4061':
 				$thread['lang'] = 1;
+				$thread['frontend'] = 0;
 			break;
 			//set language to german
 			case '242':
@@ -410,6 +410,7 @@ while ($row = mysql_fetch_assoc($result)) {
 			case '4021':
 			case '4041':
 				$thread['lang'] = 2;
+				$thread['frontend'] = 0;
 			break;
 
 			//set front end boolean
@@ -523,6 +524,7 @@ $i++;
 //echo $json;
 
 $solr->add_document($thread);
+
 
 $solr->post_docs();
 //$json = json_encode($data);

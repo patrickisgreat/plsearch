@@ -49,10 +49,10 @@
 		          (?:-nocookie)?  # youtube-nocookie.com
 		          \.com           # followed by
 		          \S*             # Allow anything up to VIDEO_ID,
-		          [^\w\s-]       # but char before ID is non-ID char.
+		          [^\w\s-]        # but char before ID is non-ID char.
 		        )                 # End host alternatives.
-		        ([\w-]{11})      # $1: VIDEO_ID is exactly 11 chars.
-		        (?=[^\w-]|$)     # Assert next char is non-ID or EOS.
+		        ([\w-]{11})       # $1: VIDEO_ID is exactly 11 chars.
+		        (?=[^\w-]|$)      # Assert next char is non-ID or EOS.
 		        (?!               # Assert URL is not pre-linked.
 		          [?=&+%\w.-]*    # Allow URL (query) remainder.
 		          (?:             # Group pre-linked alternatives.
@@ -60,13 +60,37 @@
 		          | </a>          # or inside <a> element text contents.
 		          )               # End recognized pre-linked alts.
 		        )                 # End negative lookahead assertion.
-		        [?=&+%\w.-]*        # Consume any URL (query) remainder.
+		        [?=&+%\w.-]*      # Consume any URL (query) remainder.
 		        ~ix', 
 		        '<a href="http://www.youtube.com/watch?v=$1">YouTube link: $1</a>',
 		        $text);
+		    //var_dump($text);
+		    //echo "<br />";
 		    return $text;
 		}
 
+		function extractYouTubeIDNew($text) {
+
+		        $pattern = '#^(?:https?://)?';    # Optional URL scheme. Either http or https.
+        		$pattern .= '(?:www\.)?';         #  Optional www subdomain.
+        		$pattern .= '(?:';                #  Group host alternatives:
+        		$pattern .=   'youtu\.be/';       #    Either youtu.be,
+        		$pattern .=   '|youtube\.com';    #    or youtube.com
+        		$pattern .=   '(?:';              #    Group path alternatives:
+        		$pattern .=     '/embed/';        #      Either /embed/,
+        		$pattern .=     '|/v/';           #      or /v/,
+        		$pattern .=     '|/watch\?v=';    #      or /watch?v=,
+        		$pattern .=     '|/watch\?.+&v='; #      or /watch?other_param&v=
+        		$pattern .=   ')';                #    End path alternatives.
+        		$pattern .= ')';                  #  End host alternatives.
+        		$pattern .= '([\w-]{11})';        # 11 characters (Length of Youtube video ids).
+        		$pattern .= '(?:.+)?$#x';         # Optional other ending URL parameters.
+        		preg_replace($pattern, '<a href="http://www.youtube.com/watch?v=$1">YouTube link: $1</a>', $text);
+        		//var_dump($text);
+        		//echo "<br />";
+        		//return (isset($matches[1])) ? $matches[1] : FALSE;
+        		return $text;
+        }
 
 		function arr_to_solr_doc($doc){
 			$count = count($doc['pagetext']);
@@ -114,14 +138,14 @@
 
 		    //vbulletin stores junk data in attachmentid so we need to collect it then verify with the attach field if there is something actually useful ther.
 		    $attachmentid = 0;
-		    
+		    $isVid = 0;
 		    foreach ($doc['pagetext'] as $pagetext){
-
+		    	
 				foreach ($pagetext as $field_name => $value){
 
 					//if ($field_name != 'pagetext') continue;
 					switch($field_name){
-						case 'cat_id':
+						case 'cat_ids':
 							$highestCat = max(explode(",", $value));
 							switch($highestCat){
 								case 1303:
@@ -130,6 +154,8 @@
 									$catPath = 'c_row_lg';
 									break;
 								case 3100:
+									$isVid = 1;
+									break;
 									//could use something here to know if its a video????
 								case 1103:
 								case 1400:
@@ -157,37 +183,35 @@
 			        			}
 			        			//  Scan through inner loop
 
-			        			//print_r($value);
+			        			//print_r($value)''
+			        			// ==== \/
+			        			// this where I left off.. only need to extract the youtube id then set it below
+			        			
+			        			
+			        			//find the string
+			        			if ($isVid == 1) {
+			        				$youtube = $this->extractYouTubeID($value);
 
+			        				//set it to the xml
+			        				if(array_key_exists(1,$youtube)){
+								    	$newPageTextNode = $dom->createElement('field');
+								    	$newPageTextNode->setAttribute("name", 'video_url');
+								    	$newPageTextNode->nodeValue = $value[1];
+							    		$node->appendChild($newPageTextNode);
+			        				}
+			        			}
 
 			        			foreach ($value as $k => $v) {
 			            			
-			            			//set values accordingly before they go off to solr
-									$value .= $v." ";
+				            			//set values accordingly before they go off to solr
+										$value .= $v." ";
 
-									//strip Array from the values here
-									$re1='(Array)';
+										//strip Array from the values here
+										$re1='(Array)';
 
-									$value =preg_replace($re1, "", $value);
-									//echo $value .'hero_sm/01.jpg';				
+										$value =preg_replace($re1, "", $value);
+										//echo $value .'hero_sm/01.jpg';				
 			        			}
-
-			        			// ==== \/
-			        			// this where I left off.. only need to extract the youtube id then set it below
-			        			/*
-			        			//find the string
-			        			echo $this->extractYoutubeID($value);
-			        			//set it to the xml
-			        			if(array_key_exists(1,$value)){
-							    	$newPageTextNode = $dom->createElement('field');
-							    	$newPageTextNode->setAttribute("name", 'video_url');
-							    	$newPageTextNode->nodeValue = $value[1];
-						    		$node->appendChild($newPageTextNode);
-			        			}
-			        			*/
-			        			//above is where the youtube id is added to the xml document
-
-			        			// ==== /\
 
 			        		} else {
 			        			if($value!=''){
@@ -285,6 +309,12 @@
     	$newnode->setAttribute("name", 'threadcount');
     	$newnode->nodeValue = $count;
     	$node->appendChild($newnode);
+
+    	//create a boolean for if the content is a video
+    	$newnode = $dom->createElement('field');
+    	$newnode->setAttribute("name", 'isvideo');
+    	$newnode->nodeValue = $isVid;
+    	$node->appendChild($newnode);
 			
 			//$node->appendChild($newnode);
 	    	//$base_node->appendChild($node);
@@ -336,7 +366,9 @@
 			
 			//DEPRECATED
 			//print_r($dom);
-			die();
+			
+			//die();
+			
 			//echo ("<br><br><br><br><br>\n\r\n\r\n\r\n\r\n\r");
 			//return sprintf('<add><doc>%s</doc></add>',$fields);
 			//$sending = true;
@@ -445,8 +477,8 @@
 		}
 
 		function post_docs() {
-			//$cmd = "curl -X POST 'http://patrickisgreat.me:8983/solr/privatelounge/update?commit=true' -H 'Content-Type: text/xml' -d @storage.xml";
-			$cmd = "curl -X POST 'http://patrickisgreat.me:8983/solr/pl2/update?commit=true' -H 'Content-Type: text/xml' -d @storage.xml";
+			$cmd = "curl -X POST 'http://patrickisgreat.me:8983/solr/privatelounge/update?commit=true' -H 'Content-Type: text/xml' -d @storage.xml";
+			//$cmd = "curl -X POST 'http://patrickisgreat.me:8983/solr/pl2/update?commit=true' -H 'Content-Type: text/xml' -d @storage.xml";
 			$output = shell_exec($cmd);
 				echo "<pre>$output</pre>";
 
