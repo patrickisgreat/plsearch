@@ -4,8 +4,8 @@
 require_once('solr_class.php');
 
 //instatiate solr
-//$solr = new Solr('http://patrickisgreat.me:8983/solr/privatelounge/');
-$solr = new Solr('http://patrickisgreat.me:8983/solr/pl2/');
+$solr = new Solr('http://patrickisgreat.me:8983/solr/privatelounge/');
+//$solr = new Solr('http://patrickisgreat.me:8983/solr/pl2/');
 
 //set up the connection obj
 //$link = mysql_connect('localhost', 'vb_admin', 'Vb4AmG$');
@@ -24,8 +24,20 @@ if (!$db_selected) {
 echo "<p>Running Query..</p><br />";
 // get all the fields
 
-//this needs to go into a function with a switch variable that starts at the next postid.
-$result = mysql_query('
+$lastpostidquery = 
+mysql_query('SELECT MAX(lastpostid) FROM `vbulletin`.`searchindextracking`');
+
+$lastpostid = mysql_fetch_row($lastpostidquery);
+
+if ($lastpostid[0] == null) {
+	echo "it did set it";
+	$lastpostid[0] = 1;
+}
+
+echo $lastpostid[0];
+echo "<br />";
+//incremental query
+$incrementalResult = mysql_query('
 	SELECT
 		p.postid, 
 		p.threadid, 
@@ -67,35 +79,56 @@ $result = mysql_query('
 	LEFT JOIN post_region AS pr ON pr.post_id = p.postid
 	LEFT JOIN attachment AS at ON at.contentid = p.postid
 
-WHERE (pc.cat_id = 3100)
+WHERE (th.threadid > "'.$lastpostid[0].'")
 
 GROUP BY p.postid
 
-ORDER BY th.threadid, p.postid DESC
-');
+ORDER BY th.threadid, p.postid ASC
+LIMIT 0, 40');
 
 //WHERE th.threadid IN (36571)
 
 //WHERE (pe.post_type = 1 OR pe.post_type IS NULL)
-if (!$result) {
-    die('Invalid query: ' . mysql_error());
+
+if (!$incrementalResult) {
+	die('Invalid query: ' . mysql_error());
 }
 
-echo "<p> query success!... Sending to SOLR </p><br />";
+//echo "<p> query success!... Sending to SOLR </p><br />";
 
-$number = mysql_num_rows($result);
+$number = mysql_num_rows($incrementalResult);
 $i = 0;
 $data = array();
 $thread = array();
 $thread['threadid'] = 0;
 $thread['pagetext'] = array();
 //$data[0]['elements'] = array();
-while ($row = mysql_fetch_assoc($result)) {
+while ($row = mysql_fetch_assoc($incrementalResult)) {
+    //if it is the first or the last record store it in the tracking table
+    if ($i == 0) {
+    	$time = date('Y-m-d H:i:s',time());
+    	$postid = $row['threadid'];
+    	echo $postid;
+    	echo "<br />";
+    	echo $row['threadid'];
+    	echo "<br />";
+    	$insert = "INSERT INTO `vbulletin`.`searchindextracking` (`created`, `firstpostid`, `totalindexed` ) VALUES ('".$time."', '".$postid."', '".$number."')";
+    	mysql_query($insert);
+    	$id = mysql_insert_id();
+    } 
+
+    if (++$i == $number-1) {
+    	$time = date('Y-m-d H:i:s',time());
+    	$lastpostid = $row['threadid'];
+    	echo $lastpostid;
+    	$update = "UPDATE `vbulletin`.`searchindextracking` SET lastpostid = '".$lastpostid."' WHERE (id = '".$id."')";
+    	mysql_query($update);
+    }
+
     //store everything in a multi dimensional array
-   
    if($thread['threadid']!=$row['threadid']){
    		if($thread['threadid']>0){
-   			$solr->add_document($thread);
+   			//$solr->add_document($thread);
    		}
    		$threadid = $row['threadid'];
    		unset($thread);
@@ -438,16 +471,16 @@ while ($row = mysql_fetch_assoc($result)) {
    	$thread['pagetext'][] = $row;
  //$solr->add_document($row);
    		
-$i++;
+//$i++;
 }
 
 //$json = json_encode($thread);
 //echo $json;
 
-$solr->add_document($thread);
+//$solr->add_document($thread);
 
 
-$solr->post_docs();
+//$solr->post_docs();
 //$json = json_encode($data);
 //echo $json;
 /*echo $json;
@@ -461,11 +494,11 @@ fclose($fp);*/
 //print_r($solr);
 //
 //$solr->commit();
-echo 'data sent Run search to test';
+//echo 'data sent Run search to test';
 //some json test stuff
 //$json = json_encode($data, true);
 
 //print_r($json);
 
-mysql_free_result($result);
+mysql_free_result($incrementalResult);
 ?>

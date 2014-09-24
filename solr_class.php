@@ -62,7 +62,10 @@
 		        )                 # End negative lookahead assertion.
 		        [?=&+%\w.-]*      # Consume any URL (query) remainder.
 		        ~ix', 
-		        '<a href="http://www.youtube.com/watch?v=$1">YouTube link: $1</a>',
+		        //for the embed
+		        //'<a href="http://www.youtube.com/watch?v=$1">YouTube link: $1</a>',
+		        //'http://img.youtube.com/vi/$1/default.jpg',
+		        '$1', 
 		        $text);
 		    //var_dump($text);
 		    //echo "<br />";
@@ -180,6 +183,11 @@
 
 			    				if($value[0]!=''){
 			        				$frontEndImagePath = 'http://www.mercedes-amg.com/privatelounge/'.$value[0]  . $catPath .'/01.jpg';
+			        				
+			        				$newPageTextNode = $dom->createElement('field');
+									$newPageTextNode->setAttribute("name", 'element_path');
+									$newPageTextNode->nodeValue = $value[0];
+							   		$node->appendChild($newPageTextNode);
 			        			}
 			        			//  Scan through inner loop
 
@@ -191,16 +199,15 @@
 			        			//find the string
 			        			if ($isVid == 1) {
 			        				$youtube = $this->extractYouTubeID($value);
-
 			        				//set it to the xml
 			        				if(array_key_exists(1,$youtube)){
 								    	$newPageTextNode = $dom->createElement('field');
-								    	$newPageTextNode->setAttribute("name", 'video_url');
-								    	$newPageTextNode->nodeValue = $value[1];
+								    	$newPageTextNode->setAttribute("name", 'youtube_id');
+								    	$newPageTextNode->nodeValue = $youtube[1];
 							    		$node->appendChild($newPageTextNode);
 			        				}
 			        			}
-
+			        			
 			        			foreach ($value as $k => $v) {
 			            			
 				            			//set values accordingly before they go off to solr
@@ -477,19 +484,26 @@
 		}
 
 		function post_docs() {
-			$cmd = "curl -X POST 'http://patrickisgreat.me:8983/solr/privatelounge/update?commit=true' -H 'Content-Type: text/xml' -d @storage.xml";
-			//$cmd = "curl -X POST 'http://patrickisgreat.me:8983/solr/pl2/update?commit=true' -H 'Content-Type: text/xml' -d @storage.xml";
-			$output = shell_exec($cmd);
-				echo "<pre>$output</pre>";
+			$uri = $this->url;
+			echo $uri;
+			echo "<br />";
+			$cmd1 = "curl -X POST '".$uri."update?commit=true' -H 'Content-Type: text/xml' -d @storage.xml";
+			//$cmd2 = "cp storage.xml /tmp/";
+			echo $cmd1;
+			echo "<br />";
+			$output1 = shell_exec($cmd1);
+				echo "<pre>Successfully sent to SOLR Here's the status</pre><pre>$output1</pre>";
+			/*$output2 = shell_exec($cmd2);
+				echo "<pre>Succesfully copied tmp file</pre>";*/
 
 				//cleanup the xml file after we've sent it off
-				/*if ($output) {
+				if ($output1) {
 					echo "output true";
 					$dom = new DOMDocument("1.0");
 					$dom->load('storage.xml');
 					$dom->formatOutput = true;
 
-					// get the add node from the file
+					//get the add node from the file
 					$base_node = $dom->getElementsByTagName('add')->item(0);
 					$docs = $base_node->childNodes;
 					while ($docs->length > 0) {
@@ -497,7 +511,7 @@
 					}
 					umask();
 					$dom->save('storage.xml');
-				}*/
+				}
 		}
  
 		function delete_by_id($id){

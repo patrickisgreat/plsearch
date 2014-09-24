@@ -67,11 +67,12 @@ $result = mysql_query('
 	LEFT JOIN post_region AS pr ON pr.post_id = p.postid
 	LEFT JOIN attachment AS at ON at.contentid = p.postid
 
-WHERE (pc.cat_id = 3100)
+WHERE (th.threadid > 94681)
 
 GROUP BY p.postid
 
 ORDER BY th.threadid, p.postid DESC
+LIMIT 0, 200
 ');
 
 //WHERE th.threadid IN (36571)
@@ -92,7 +93,22 @@ $thread['pagetext'] = array();
 //$data[0]['elements'] = array();
 while ($row = mysql_fetch_assoc($result)) {
     //store everything in a multi dimensional array
-   
+    //if it is the first or the last record store it in the tracking table
+    if ($i == 0) {
+    	$time = date('Y-m-d H:i:s',time());
+    	$postid = $row['threadid'];
+    	$insert = "INSERT INTO `vbulletin`.`searchindextracking` (`created`, `firstpostid`, `totalindexed` ) VALUES ('".$time."', '".$postid."', '".$number."')";
+    	mysql_query($insert);
+    	$id = mysql_insert_id();
+    } 
+
+    if (++$i == $number-1) {
+    	$time = date('Y-m-d H:i:s',time());
+    	$lastpostid = $row['threadid'];
+    	$update = "UPDATE `vbulletin`.`searchindextracking` SET lastpostid = '".$lastpostid."' WHERE (id = '".$id."')";
+    	mysql_query($update);
+    }
+
    if($thread['threadid']!=$row['threadid']){
    		if($thread['threadid']>0){
    			$solr->add_document($thread);
