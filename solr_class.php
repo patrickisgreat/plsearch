@@ -39,37 +39,43 @@
 
 		// Linkify youtube URLs which are not already links.
 		function extractYoutubeID($text) {
-		    $text = preg_replace('~
-		        # Match non-linked youtube URL in the wild. (Rev:20130823)
-		        https?://         # Required scheme. Either http or https.
-		        (?:[0-9A-Z-]+\.)? # Optional subdomain.
-		        (?:               # Group host alternatives.
-		          youtu\.be/      # Either youtu.be,
-		        | youtube         # or youtube.com or
-		          (?:-nocookie)?  # youtube-nocookie.com
-		          \.com           # followed by
-		          \S*             # Allow anything up to VIDEO_ID,
-		          [^\w\s-]        # but char before ID is non-ID char.
-		        )                 # End host alternatives.
-		        ([\w-]{11})       # $1: VIDEO_ID is exactly 11 chars.
-		        (?=[^\w-]|$)      # Assert next char is non-ID or EOS.
-		        (?!               # Assert URL is not pre-linked.
-		          [?=&+%\w.-]*    # Allow URL (query) remainder.
-		          (?:             # Group pre-linked alternatives.
-		            [\'"][^<>]*>  # Either inside a start tag,
-		          | </a>          # or inside <a> element text contents.
-		          )               # End recognized pre-linked alts.
-		        )                 # End negative lookahead assertion.
-		        [?=&+%\w.-]*      # Consume any URL (query) remainder.
-		        ~ix', 
-		        //for the embed
-		        //'<a href="http://www.youtube.com/watch?v=$1">YouTube link: $1</a>',
-		        //'http://img.youtube.com/vi/$1/default.jpg',
-		        '$1', 
-		        $text);
-		    //var_dump($text);
-		    //echo "<br />";
-		    return $text;
+
+			foreach( $text as $maybeYoutube){
+				$stringStart = substr($maybeYoutube, 0,4);
+				if($stringStart=='http'){
+
+				    $youTubeID = preg_replace('~
+				        # Match non-linked youtube URL in the wild. (Rev:20130823)
+				        https?://         # Required scheme. Either http or https.
+				        (?:[0-9A-Z-]+\.)? # Optional subdomain.
+				        (?:               # Group host alternatives.
+				          youtu\.be/      # Either youtu.be,
+				        | youtube         # or youtube.com or
+				          (?:-nocookie)?  # youtube-nocookie.com
+				          \.com           # followed by
+				          \S*             # Allow anything up to VIDEO_ID,
+				          [^\w\s-]        # but char before ID is non-ID char.
+				        )                 # End host alternatives.
+				        ([\w-]{11})       # $1: VIDEO_ID is exactly 11 chars.
+				        (?=[^\w-]|$)      # Assert next char is non-ID or EOS.
+				        (?!               # Assert URL is not pre-linked.
+				          [?=&+%\w.-]*    # Allow URL (query) remainder.
+				          (?:             # Group pre-linked alternatives.
+				            [\'"][^<>]*>  # Either inside a start tag,
+				          | </a>          # or inside <a> element text contents.
+				          )               # End recognized pre-linked alts.
+				        )                 # End negative lookahead assertion.
+				        [?=&+%\w.-]*      # Consume any URL (query) remainder.
+				        ~ix', 
+				        //for the embed
+				        //'<a href="http://www.youtube.com/watch?v=$1">YouTube link: $1</a>',
+				        //'http://img.youtube.com/vi/$1/default.jpg',
+				        '$1', 
+				        $maybeYoutube);
+				    return $youTubeID;
+				}
+			}
+			return false;
 		}
 
 		function extractYouTubeIDNew($text) {
@@ -203,7 +209,7 @@
 			        				if(array_key_exists(1,$youtube)){
 								    	$newPageTextNode = $dom->createElement('field');
 								    	$newPageTextNode->setAttribute("name", 'youtube_id');
-								    	$newPageTextNode->nodeValue = $youtube[1];
+								    	$newPageTextNode->nodeValue = $youtube;
 							    		$node->appendChild($newPageTextNode);
 			        				}
 			        			}
