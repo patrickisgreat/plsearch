@@ -1,5 +1,5 @@
 <?php
-
+ini_set('display_errors', 0);
 //call in the bridge lib
 require_once('solr_class.php');
 
@@ -47,8 +47,8 @@ $result = mysql_query('
 		GROUP_CONCAT(DISTINCT pr.region_id) as region_id,
 
 		th.threadid,
-		th.title,
 		th.forumid,
+		th.title,
 		th.lastpost,
 		th.lastposter,
 		th.lastpostid,
@@ -67,13 +67,17 @@ $result = mysql_query('
 	LEFT JOIN post_region AS pr ON pr.post_id = p.postid
 	LEFT JOIN attachment AS at ON at.contentid = p.postid
 
-WHERE (pc.cat_id = 3100)
+
+
+WHERE (pc.cat_id = 3100)  
 
 GROUP BY p.postid
 
 ORDER BY th.threadid, p.postid DESC
-');
 
+');
+//GROUP_CONCAT(DISTINCT fp.forumpermissions) as forumpermission,
+// AND ( p.postid = 766801)
 //WHERE th.threadid IN (36571)
 
 //WHERE (pe.post_type = 1 OR pe.post_type IS NULL)
@@ -103,8 +107,11 @@ while ($row = mysql_fetch_assoc($result)) {
 		$thread['threadid'] = $row['threadid'];
 		$thread['parentid'] = $row['parentid'];
 		$thread['title'] = $row['title'];
-		/*$thread['dateline'] = $row['dateline'];
 		$thread['forumid'] = $row['forumid'];
+
+		//echo $row['forumid'] ."<br>\n";
+
+		/*$thread['dateline'] = $row['dateline'];
 		$thread['lastpost'] = $row['lastpost'];*/
 		$thread['pagetext'] = array();
 		//set language to english
@@ -437,6 +444,8 @@ while ($row = mysql_fetch_assoc($result)) {
    	//doooooooooooooooooooo... .
    	$thread['pagetext'][] = $row;
  //$solr->add_document($row);
+
+	//print_r($row);
    		
 $i++;
 }

@@ -101,6 +101,34 @@
         		return $text;
         }
 
+        function lookup_permissions($forumid){
+        	$query = "SELECT *  FROM `forumpermission` WHERE `forumid` = " .$forumid;
+        	$result = mysql_query($query);
+			$number = mysql_num_rows($result);
+			if($number<1){
+
+	        	$deepQuery = "SELECT forumid, parentid FROM `forum` WHERE `forumid` = " .$forumid ." LIMIT 0 , 1";
+	        	$deepResult = mysql_query($deepQuery);
+				$number = mysql_num_rows($deepResult);
+	        	$deepRow = mysql_fetch_assoc($deepResult);
+
+				if($number<1){
+					return $this->lookup_permissions($deepRow['parentid']);
+				}
+
+        		$query = "SELECT *  FROM `forumpermission` WHERE `forumid` = " .$deepRow['parentid'];
+        		$result = mysql_query($query);
+			}
+			echo $query;
+
+			$permissions = Array();
+			while ($row = mysql_fetch_assoc($result)) {
+				$permissions[] = $row;
+			}
+
+			return $permissions;
+        }
+
 		function arr_to_solr_doc($doc){
 			$count = count($doc['pagetext']);
 		    $count = $count-1;
@@ -110,7 +138,7 @@
 			$pageTextImagePath = false;
 			$frontEndImagePath = false;
 
-			//print_r($doc);
+			$doc['permissions'] = $this->lookup_permissions($doc['forumid']);
 
 			$postArray = array();
 
@@ -187,6 +215,9 @@
 
 			    				//http://www.mercdes-amg.com/privatelounge/' .$value .'h2ero_sm/01.jpg';
 
+			    				if(!isset($catPath)){
+									$catPath = 'c_row_lg';
+			    				}
 			    				if($value[0]!=''){
 			        				$frontEndImagePath = 'http://www.mercedes-amg.com/privatelounge/'.$value[0]  . $catPath .'/01.jpg';
 			        				
