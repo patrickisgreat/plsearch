@@ -75,6 +75,7 @@ GROUP BY p.postid
 
 ORDER BY th.threadid, p.postid DESC
 
+LIMIT 0, 4
 ');
 //GROUP_CONCAT(DISTINCT fp.forumpermissions) as forumpermission,
 // AND ( p.postid = 766801)
@@ -456,7 +457,7 @@ $i++;
 $solr->add_document($thread);
 
 
-$solr->post_docs();
+//$solr->post_docs();
 //$json = json_encode($data);
 //echo $json;
 /*echo $json;

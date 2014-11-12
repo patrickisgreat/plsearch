@@ -111,16 +111,12 @@
 	        	$deepResult = mysql_query($deepQuery);
 				$number = mysql_num_rows($deepResult);
 	        	$deepRow = mysql_fetch_assoc($deepResult);
-
 				if($number<1){
 					return $this->lookup_permissions($deepRow['parentid']);
 				}
-
         		$query = "SELECT *  FROM `forumpermission` WHERE `forumid` = " .$deepRow['parentid'];
         		$result = mysql_query($query);
 			}
-			echo $query;
-
 			$permissions = Array();
 			while ($row = mysql_fetch_assoc($result)) {
 				$permissions[] = $row;
@@ -165,6 +161,7 @@
 
 			foreach ($doc as $field_name => $value){
 				if ($field_name == 'pagetext') continue;
+				if ($field_name == 'permissions') continue;
 
 		    	$newnode = $dom->createElement('field');
 		    	$newnode->setAttribute("name", $field_name);
@@ -172,6 +169,20 @@
 		    	$node->appendChild($newnode);
 		    	$base_node->appendChild($node);
 		    }
+
+	    	$newnode = $dom->createElement('arr');
+		    $newnode->setAttribute("name", 'permissions');
+
+		    foreach ($doc['permissions'] as $permissions){
+		    	//bitwise can view threads based off of the bitfield_vbulletin.xml file
+		    	if($permissions['forumpermissions'] & 524288 ){
+			    	$permissionsNode = $dom->createElement('str');
+			    	$permissionsNode->nodeValue = $permissions['usergroupid'];
+		    		$newnode->appendChild($permissionsNode);
+	    		}
+		    }
+	    	$node->appendChild($newnode);
+
 
 		    //vbulletin stores junk data in attachmentid so we need to collect it then verify with the attach field if there is something actually useful ther.
 		    $attachmentid = 0;
