@@ -1,9 +1,27 @@
 <?php
 	class Solr {
  
-		function __construct($url){
+ 		//constructor
+		function __construct($url, $dbhost, $un, $pw, $usedb){
 			$this->url = $url;
 			$this->httppost = TRUE;
+			$this->dbhost = $dbhost;
+			$this->un = $un;
+			$this->pw = $pw;
+			$this->usedb = $usedb;
+		}
+ 
+		//database connect
+		public function connect() {
+			$link = mysql_connect($this->dbhost, $this->un, $this->pw);
+			if (!$link) {
+			    die('Not connected : ' . mysql_error());
+			}
+			$db_selected = mysql_select_db($this->usedb, $link);
+			if (!$db_selected) {
+			    die ('Can\'t use '.$this->usedb.' : ' . mysql_error());
+			}
+			return $link;
 		}
  
 		
@@ -172,15 +190,15 @@
 
 	    	$newnode = $dom->createElement('arr');
 		    $newnode->setAttribute("name", 'permissions');
-
-		    foreach ($doc['permissions'] as $permissions){
-		    	//bitwise can view threads based off of the bitfield_vbulletin.xml file
-		    	if($permissions['forumpermissions'] & 524288 ){
-			    	$permissionsNode = $dom->createElement('str');
-			    	$permissionsNode->nodeValue = $permissions['usergroupid'];
-		    		$newnode->appendChild($permissionsNode);
-	    		}
-		    }
+			foreach ($doc['permissions'] as $permissions){
+				//bitwise can view threads based off of the bitfield_vbulletin.xml file
+				if($permissions['forumpermissions'] & 524288){
+					$newnode = $dom->createElement('field');
+					$newnode->setAttribute("name", "permissions");
+					$newnode->nodeValue = $permissions['usergroupid'];
+					$node->appendChild($newnode);
+				}
+			}
 	    	$node->appendChild($newnode);
 
 
@@ -248,24 +266,10 @@
 			        			if ($isVid == 1) {
 			        				$youtube = $this->extractYouTubeID($value);
 			        				//set it to the xml
-			        				if(array_key_exists(1,$youtube)){
 								    	$newPageTextNode = $dom->createElement('field');
 								    	$newPageTextNode->setAttribute("name", 'youtube_id');
 								    	$newPageTextNode->nodeValue = $youtube;
 							    		$node->appendChild($newPageTextNode);
-			        				}
-			        			}
-			        			
-			        			foreach ($value as $k => $v) {
-			            			
-				            			//set values accordingly before they go off to solr
-										$value .= $v." ";
-
-										//strip Array from the values here
-										$re1='(Array)';
-
-										$value =preg_replace($re1, "", $value);
-										//echo $value .'hero_sm/01.jpg';				
 			        			}
 
 			        		} else {
@@ -319,9 +323,10 @@
 					//$fields .= sprintf('<field name="%s">%s</field>'."\n\r",$field_name, $value);
 					//create new node for each field in $doc
 			    	
+
 			    	//solr needs very strict encoding and escaping
-			    	$value = htmlspecialchars($value);
-			    	$value = utf8_encode($value);
+			    	//$value = htmlspecialchars($value);
+			    	//$value = utf8_encode($value);
 
 			    	if($field_name == 'pagetext'){
 				    	$value = self::stripBBCode($value);
@@ -412,12 +417,17 @@
 		    	}
 
 		    }
-		    //print_r($dom);
+		    print_r($postArray);
 			
 			//gimme the xml -- building on each execution
 			umask();
-
-			$dom->save('storage.xml');
+			$query = sprintf("INSERT INTO searchxml_test (xml, created, threadid) VALUES ('%s', '%s', '%s')", 
+				mysql_real_escape_string($dom->saveXML($base_node)),
+				mysql_real_escape_string(date('Y-m-d')),
+				mysql_real_escape_string($postArray['threadid'])
+				);
+			$results = mysql_query($query);
+			//$dom->save('storage.xml');
 			
 			//DEPRECATED
 			//print_r($dom);

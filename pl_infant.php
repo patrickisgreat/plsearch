@@ -1,16 +1,19 @@
 <?php
-ini_set('display_errors', 0);
+
 //call in the bridge lib
 require_once('solr_class.php');
 
 //instatiate solr
 //$solr = new Solr('http://patrickisgreat.me:8983/solr/privatelounge/');
-$solr = new Solr('http://patrickisgreat.me:8983/solr/pl2/');
-
+$solr = new Solr('http://patrickisgreat.me:8983/solr/privatelounge/', '162.243.217.180', 'pbennett', 'swacuGaKur2j', 'vbulletin');
+$link = $solr->connect();
+if (!$link) {
+    die('Not connected : ' . mysql_error());
+}
 //set up the connection obj
 //$link = mysql_connect('localhost', 'vb_admin', 'Vb4AmG$');
 //$link = mysql_connect('blacqube.net', 'vb_admin', 'Vb4AmG$11');
-$link = mysql_connect('162.243.217.180', 'pbennett', 'swacuGaKur2j');
+/*$link = mysql_connect('162.243.217.180', 'pbennett', 'swacuGaKur2j');
 if (!$link) {
     die('Not connected : ' . mysql_error());
 }
@@ -19,7 +22,8 @@ if (!$link) {
 $db_selected = mysql_select_db('vbulletin', $link);
 if (!$db_selected) {
     die ('Can\'t use vbulletin : ' . mysql_error());
-}
+}*/
+
 
 echo "<p>Running Query..</p><br />";
 // get all the fields
@@ -75,7 +79,7 @@ GROUP BY p.postid
 
 ORDER BY th.threadid, p.postid DESC
 
-LIMIT 0, 4
+LIMIT 0, 8
 ');
 //GROUP_CONCAT(DISTINCT fp.forumpermissions) as forumpermission,
 // AND ( p.postid = 766801)
