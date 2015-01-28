@@ -14,6 +14,7 @@
 		//database connect
 		public function connect() {
 			$link = mysql_connect($this->dbhost, $this->un, $this->pw);
+			mysql_set_charset('utf8', $link);
 			if (!$link) {
 			    die('Not connected : ' . mysql_error());
 			}
@@ -42,14 +43,13 @@
 
 		public function url_cleaner($url) {
 		  $U = explode(' ',$url);
-
 		  $W =array();
 		  foreach ($U as $k => $u) {
 		    if (stristr($u,".")) { //only preg_match if there is a dot    
 		      if (self::containsTLD($u) === true) {
 		      unset($U[$k]);
 		      return self::url_cleaner( implode(' ',$U));
-		    	}      
+		      }      
 		    }
 		  }
 		  return implode(' ',$U);
@@ -188,18 +188,15 @@
 		    	$base_node->appendChild($node);
 		    }
 
-	    	$newnode = $dom->createElement('arr');
-		    $newnode->setAttribute("name", 'permissions');
-			foreach ($doc['permissions'] as $permissions){
-				//bitwise can view threads based off of the bitfield_vbulletin.xml file
-				if($permissions['forumpermissions'] & 524288){
-					$newnode = $dom->createElement('field');
-					$newnode->setAttribute("name", "permissions");
-					$newnode->nodeValue = $permissions['usergroupid'];
-					$node->appendChild($newnode);
+	    	foreach ($doc['permissions'] as $permissions) {
+	    	//bitwise can view threads based off of the bitfield_vbulletin.xml file
+	    	if( $permissions['forumpermissions'] & 524288 ){
+			    	$newnode = $dom->createElement('field');
+			    	$newnode->setAttribute("name", "permissions");
+			    	$newnode->nodeValue = $permissions['usergroupid'];
+		    		$node->appendChild($newnode);
 				}
 			}
-	    	$node->appendChild($newnode);
 
 
 		    //vbulletin stores junk data in attachmentid so we need to collect it then verify with the attach field if there is something actually useful ther.
@@ -331,6 +328,8 @@
 			    	if($field_name == 'pagetext'){
 				    	$value = self::stripBBCode($value);
 			    		$value = self::url_cleaner($value);
+			    		$value = htmlspecialchars($value);
+	    				$value = utf8_encode($value);
 				    	$newPageTextNode = $dom->createElement('field');
 				    	$newPageTextNode->setAttribute("name", $field_name);
 				    	$newPageTextNode->nodeValue = $value;
@@ -417,50 +416,74 @@
 		    	}
 
 		    }
-		    print_r($postArray);
+		    //print_r($postArray);
 			
 			//gimme the xml -- building on each execution
 			umask();
-			$query = sprintf("INSERT INTO searchxml_test (xml, created, threadid) VALUES ('%s', '%s', '%s')", 
+			$query = sprintf("INSERT INTO searchxml (xml, created, threadid) VALUES ('%s', '%s', '%s')", 
 				mysql_real_escape_string($dom->saveXML($base_node)),
 				mysql_real_escape_string(date('Y-m-d')),
 				mysql_real_escape_string($postArray['threadid'])
 				);
 			$results = mysql_query($query);
 			//$dom->save('storage.xml');
-			
 			//DEPRECATED
 			//print_r($dom);
-			
 			//die();
-			
 			//echo ("<br><br><br><br><br>\n\r\n\r\n\r\n\r\n\r");
 			//return sprintf('<add><doc>%s</doc></add>',$fields);
 			//$sending = true;
-}
+	}
  
-		private function post($xml){
+		public function post() {
+			$check = new DomDocument("1.0");
 			$ch = curl_init();
-			$post_url = $this->url.'update';
- 
-			$header = array("Content-type:text/xml; charset=utf-8");
-			curl_setopt($ch, CURLOPT_URL, $post_url);
-			curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
-			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-			curl_setopt($ch, CURLOPT_POST, 1);
-			curl_setopt($ch, CURLOPT_POSTFIELDS, $xml);
-			curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-			curl_setopt($ch, CURLINFO_HEADER_OUT, 1);
- 
-			$data = curl_exec($ch);
- 
-			if (curl_errno($ch)) {
-			   throw new Exception ( "curl_error:" . curl_error($ch) );
-			} else {
-			   curl_close($ch);
-			   return TRUE;
+			$post_url = $this->url.'update?commit=true';
+			$query = "SELECT xml FROM searchxml";
+			$results = mysql_query($query);
+			$xml = "";
+			$i=0;
+			$didntmakeit = array();
+			$numResults = mysql_num_rows($results);
+			while ($row = mysql_fetch_assoc($results)) {
+				$checkit = $check->loadXML($row['xml']);
+				str_replace('&#13;', '', $row['xml']);
+				if ($checkit) {
+					$xml .= utf8_encode($row['xml']); 
+				} 
+				if ($i < 10 && !$checkit) {
+					$didntmakeit[] = $row['xml'];
+				}
+				$i++;	
 			}
+			
+			$xml = "<add>".$xml."</add>";
+			print_r($didntmakeit);
+			//$xml = utf8_encode($xml);
+
+				$header = array("Content-type:text/xml; charset=utf-8");
+				curl_setopt($ch, CURLOPT_URL, $post_url);
+				curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
+				curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+				curl_setopt($ch, CURLOPT_POST, 1);
+				curl_setopt($ch, CURLOPT_POSTFIELDS, $xml);
+				curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+				curl_setopt($ch, CURLINFO_HEADER_OUT, 1);
+
+				$data = curl_exec($ch);
+				var_dump($data);
+				if (curl_errno($ch)) {
+				   throw new Exception ( "curl_error:" . curl_error($ch) );
+				} else {
+				   //curl_close($ch);
+				   echo "got this far";
+				   curl_close($ch);
+				   echo "done";
+				   return TRUE;
+			}	
 		}
+
+
  
 		function fetch_data($query, $rows){		
 			$search_url = $this->url.'select';

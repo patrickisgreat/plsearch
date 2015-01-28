@@ -4,21 +4,11 @@
 require_once('solr_class.php');
 
 //instatiate solr
-$solr = new Solr('http://patrickisgreat.me:8983/solr/privatelounge/');
-//$solr = new Solr('http://patrickisgreat.me:8983/solr/pl2/');
-
-//set up the connection obj
-//$link = mysql_connect('localhost', 'vb_admin', 'Vb4AmG$');
-//$link = mysql_connect('blacqube.net', 'vb_admin', 'Vb4AmG$11');
-$link = mysql_connect('162.243.217.180', 'pbennett', 'swacuGaKur2j');
+//$solr = new Solr('http://patrickisgreat.me:8983/solr/privatelounge/');
+$solr = new Solr('http://patrickisgreat.me:8983/solr/privatelounge/', '162.243.217.180', 'pbennett', 'swacuGaKur2j', 'vbulletin');
+$link = $solr->connect();
 if (!$link) {
     die('Not connected : ' . mysql_error());
-}
-
-// lalalala
-$db_selected = mysql_select_db('vbulletin', $link);
-if (!$db_selected) {
-    die ('Can\'t use vbulletin : ' . mysql_error());
 }
 
 echo "<p>Running Query..</p><br />";
@@ -51,16 +41,14 @@ $incrementalResult = mysql_query('
 		pc.cat_id, 
 		
 		GROUP_CONCAT(DISTINCT pc.cat_id) as cat_ids,
-
-
 		GROUP_CONCAT(DISTINCT pe.post_type) as post_type, 
 		GROUP_CONCAT(DISTINCT pe.element_type) as element_type, 
 		GROUP_CONCAT(DISTINCT pe.element) as element, 
 		GROUP_CONCAT(DISTINCT pr.region_id) as region_id,
 
 		th.threadid,
-		th.title,
 		th.forumid,
+		th.title,
 		th.lastpost,
 		th.lastposter,
 		th.lastpostid,
@@ -68,33 +56,24 @@ $incrementalResult = mysql_query('
 
 		at.contentid,
 		at.attachmentid,
-
 		p.attach
 	
-	FROM thread AS th
-		
-	JOIN post as p ON p.threadid = th.threadid
-	LEFT JOIN post_element AS pe ON pe.post_id = p.postid
-	LEFT JOIN post_category AS pc ON pc.post_id = p.postid
-	LEFT JOIN post_region AS pr ON pr.post_id = p.postid
-	LEFT JOIN attachment AS at ON at.contentid = p.postid
+		FROM thread AS th
+			
+		JOIN post as p ON p.threadid = th.threadid
+		LEFT JOIN post_element AS pe ON pe.post_id = p.postid
+		LEFT JOIN post_category AS pc ON pc.post_id = p.postid
+		LEFT JOIN post_region AS pr ON pr.post_id = p.postid
+		LEFT JOIN attachment AS at ON at.contentid = p.postid
 
-WHERE (th.threadid > "'.$lastpostid[0].'")
-
-GROUP BY p.postid
-
-ORDER BY th.threadid, p.postid ASC
-LIMIT 0, 40');
-
-//WHERE th.threadid IN (36571)
-
-//WHERE (pe.post_type = 1 OR pe.post_type IS NULL)
+		WHERE (th.threadid > "'.$lastpostid[0].'")
+		GROUP BY p.postid
+		ORDER BY th.threadid, p.postid DESC
+		LIMIT 0, 40');
 
 if (!$incrementalResult) {
 	die('Invalid query: ' . mysql_error());
 }
-
-//echo "<p> query success!... Sending to SOLR </p><br />";
 
 $number = mysql_num_rows($incrementalResult);
 $i = 0;
@@ -102,7 +81,6 @@ $data = array();
 $thread = array();
 $thread['threadid'] = 0;
 $thread['pagetext'] = array();
-//$data[0]['elements'] = array();
 while ($row = mysql_fetch_assoc($incrementalResult)) {
     //if it is the first or the last record store it in the tracking table
     if ($i == 0) {
@@ -128,7 +106,7 @@ while ($row = mysql_fetch_assoc($incrementalResult)) {
     //store everything in a multi dimensional array
    if($thread['threadid']!=$row['threadid']){
    		if($thread['threadid']>0){
-   			//$solr->add_document($thread);
+   			$solr->add_document($thread);
    		}
    		$threadid = $row['threadid'];
    		unset($thread);
@@ -136,9 +114,7 @@ while ($row = mysql_fetch_assoc($incrementalResult)) {
 		$thread['threadid'] = $row['threadid'];
 		$thread['parentid'] = $row['parentid'];
 		$thread['title'] = $row['title'];
-		/*$thread['dateline'] = $row['dateline'];
 		$thread['forumid'] = $row['forumid'];
-		$thread['lastpost'] = $row['lastpost'];*/
 		$thread['pagetext'] = array();
 		//set language to english
 		switch ($row['forumid']) { 
@@ -457,7 +433,6 @@ while ($row = mysql_fetch_assoc($incrementalResult)) {
 
 		$date = strtotime("@{$row['dateline']}");
 		$new_date = gmDate("Y-m-d\TH:i:s\Z", $date); 
-
    		$row['dateline'] = $new_date;
    	
    	}
@@ -471,34 +446,10 @@ while ($row = mysql_fetch_assoc($incrementalResult)) {
    	$thread['pagetext'][] = $row;
  //$solr->add_document($row);
    		
-//$i++;
+$i++;
 }
 
-//$json = json_encode($thread);
-//echo $json;
-
-//$solr->add_document($thread);
-
-
-//$solr->post_docs();
-//$json = json_encode($data);
-//echo $json;
-/*echo $json;
-
-$fp = fopen('test.json', 'a+');
-
-fwrite($fp, $json);
-
-
-fclose($fp);*/
-//print_r($solr);
-//
-//$solr->commit();
-//echo 'data sent Run search to test';
-//some json test stuff
-//$json = json_encode($data, true);
-
-//print_r($json);
+$solr->add_document($thread);
 
 mysql_free_result($incrementalResult);
 ?>
