@@ -87,7 +87,7 @@ while ($row = mysql_fetch_assoc($result)) {
   		$row['forumid'] == '1911' || $row['forumid'] == '1831' || $row['forumid'] == '1841' || $row['forumid'] == '1851' || $row['forumid'] == '1861' || $row['forumid'] == '1871' || $row['forumid'] == '1881' || 
   		$row['forumid'] == '3881' || $row['forumid'] == '1821' || $row['forumid'] == '1891' || $row['forumid'] == '1901' || $row['forumid'] == '1921' || $row['forumid'] == '1931' || $row['forumid'] == '2252' || 
   		$row['forumid'] == '3632' || $row['forumid'] == '3602' || $row['forumid'] == '3981' || $row['forumid'] == '1791' || $row['forumid'] == '1801' || $row['forumid'] == '1811' || $row['forumid'] == '1961' || 
-  		$row['forumid'] == '1971' || $row['forumid'] == '3261' || $row['forumid'] == '3291' || $row['forumid'] == '3451' || $row['forumid'] == '3271' || $row['forumid'] == '3281') 
+  		$row['forumid'] == '1971' || $row['forumid'] == '3261' || $row['forumid'] == '3291' || $row['forumid'] == '3451' || $row['forumid'] == '3271' || $row['forumid'] == '3281' || $row['forumid'] == '3541' || $row['forumid'] == '3551') 
 	{ 
 		echo "continuation";
 		continue;

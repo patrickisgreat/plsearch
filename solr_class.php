@@ -246,7 +246,6 @@
 			    				}
 			    				if($value[0]!=''){
 			        				$frontEndImagePath = 'http://www.mercedes-amg.com/privatelounge/'.$value[0]  . $catPath .'/01.jpg';
-			        				
 			        				$newPageTextNode = $dom->createElement('field');
 									$newPageTextNode->setAttribute("name", 'element_path');
 									$newPageTextNode->nodeValue = $value[0];
@@ -271,7 +270,7 @@
 
 			        		} else {
 			        			if($value!=''){
-			        				//echo ('running up here');
+			        			//echo ('running up here');
 								$frontEndImagePath = 'http://www.mercdes-amg.com/privatelounge/'.$value . $catPath .'/01.jpg';
 								}
 			        		}
@@ -280,12 +279,12 @@
 						case 'pagetext':
 							preg_match_all("/(\[ATTACH\](?<digit>[0-9]+)\[\/ATTACH\])/", $value, $matches);
 							if(isset($matches['digit'][0])){
-								$pageTextImageURL = 'http://162.243.217.180/privatelounge/image.php?' .$matches['digit'][0];
+								$pageTextImageURL = 'http://www.mercedes-amg.com/privatelounge/images/image.php?' .$matches['digit'][0];
 							}
 							if($pageTextImageURL){
 								preg_match_all("/\[IMG\](?<image>https?:\/\/.*\.(?:png|jpg))\[\/IMG\]/", $value, $matches);
 								if(isset($matches['image'][0])){
-									$pageTextImagePath = 'http://162.243.217.180/privatelounge/image.php?' .$matches['image'][0];
+									$pageTextImagePath = 'http://www.mercedes-amg.com/privatelounge/images/image.php?' .$matches['image'][0];
 								}
 							}
 						break;
@@ -303,7 +302,7 @@
 									$value = $pageTextImagePath;
 								}
 							}elseif($value==1){
-								$value = 'http://162.243.217.180/privatelounge/image.php?' .$attachmentid;
+								$value = 'http://www.mercedes-amg.com/privatelounge/images/image.php?' .$attachmentid;
 							}
 
 						break;
@@ -316,11 +315,8 @@
 						//echo $field_name;
 				} 
 
-
 					//$fields .= sprintf('<field name="%s">%s</field>'."\n\r",$field_name, $value);
 					//create new node for each field in $doc
-			    	
-
 			    	//solr needs very strict encoding and escaping
 			    	//$value = htmlspecialchars($value);
 			    	//$value = utf8_encode($value);
@@ -328,8 +324,8 @@
 			    	if($field_name == 'pagetext'){
 				    	$value = self::stripBBCode($value);
 			    		$value = self::url_cleaner($value);
-			    		$value = htmlspecialchars($value);
-	    				$value = utf8_encode($value);
+			    		$value = htmlspecialchars($value, ENT_NOQUOTES, "UTF-8");
+	    				//$value = utf8_encode($value);
 				    	$newPageTextNode = $dom->createElement('field');
 				    	$newPageTextNode->setAttribute("name", $field_name);
 				    	$newPageTextNode->nodeValue = $value;
@@ -354,8 +350,8 @@
 	    $sanitaryPageText = $doc['pagetext'][$count]['pagetext'];
 	    $sanitaryPageText = self::stripBBCode($sanitaryPageText);
 	    $sanitaryPageText = self::url_cleaner($sanitaryPageText);
-	    $sanitaryPageText = htmlspecialchars($sanitaryPageText);
-	    $sanitaryPageText = utf8_encode($sanitaryPageText);
+	    $sanitaryPageText = htmlspecialchars($sanitaryPageText, ENT_NOQUOTES, "UTF-8");
+	    //$sanitaryPageText = utf8_encode($sanitaryPageText);
 
 	    //create the threadpagetext field
     	$newnode = $dom->createElement('field');
@@ -377,17 +373,23 @@
 			
 			//$node->appendChild($newnode);
 	    	//$base_node->appendChild($node);
-
 			foreach ($postArray as $field_name => $value){
 
 				switch($field_name){
-
-					case 'username';
+					
+					case 'attach':
+				    	$newnodes = $dom->createElement('field');
+				    	$newnodes->setAttribute("name", $field_name);
+				    	$newnodes->nodeValue = $value;
+				    	$node->appendChild($newnodes);
+				    	$base_node->appendChild($node);
+		    		
+			    	break;
+			    	case 'username';
 					case 'postid':
 					case 'lastpost':
 					case 'forumid':
 					case 'dateline':
-					case 'attach':
 					case 'attachmentid':
 					case 'contentid':
 					case 'similar':
@@ -403,16 +405,16 @@
 					case 'allowsmilie':
 				    	
 				    	
-				    	$value = self::stripBBCode($value);
-			    		$value = self::url_cleaner($value);
-			    		$value = htmlspecialchars($value);
-			    		$value = utf8_encode($postArray[$field_name]);
-				    	$newnode = $dom->createElement('field');
-				    	$newnode->setAttribute("name", $field_name);
-				    	$newnode->nodeValue = $value;
-				    	$node->appendChild($newnode);
-				    	$base_node->appendChild($node);
-			    		break;
+			    	$value = self::stripBBCode($value);
+		    		$value = self::url_cleaner($value);
+		    		$value = htmlspecialchars($value, ENT_NOQUOTES, "UTF-8");
+		    		//$value = utf8_encode($postArray[$field_name]);
+			    	$newnode = $dom->createElement('field');
+			    	$newnode->setAttribute("name", $field_name);
+			    	$newnode->nodeValue = $value;
+			    	$node->appendChild($newnode);
+			    	$base_node->appendChild($node);
+		    		break;
 		    	}
 
 		    }
@@ -435,53 +437,53 @@
 			//$sending = true;
 	}
  
-		public function post() {
-			$check = new DomDocument("1.0");
-			$ch = curl_init();
-			$post_url = $this->url.'update?commit=true';
-			$query = "SELECT xml FROM searchxml";
-			$results = mysql_query($query);
-			$xml = "";
-			$i=0;
-			$didntmakeit = array();
-			$numResults = mysql_num_rows($results);
-			while ($row = mysql_fetch_assoc($results)) {
-				$checkit = $check->loadXML($row['xml']);
-				str_replace('&#13;', '', $row['xml']);
-				if ($checkit) {
-					$xml .= utf8_encode($row['xml']); 
-				} 
-				if ($i < 10 && !$checkit) {
-					$didntmakeit[] = $row['xml'];
-				}
-				$i++;	
+	public function post() {
+		$check = new DomDocument("1.0");
+		$ch = curl_init();
+		$post_url = $this->url.'update?commit=true';
+		$query = "SELECT xml FROM searchxml";
+		$results = mysql_query($query);
+		$xml = "";
+		$i=0;
+		$didntmakeit = array();
+		$numResults = mysql_num_rows($results);
+		while ($row = mysql_fetch_assoc($results)) {
+			$checkit = $check->loadXML($row['xml']);
+			str_replace('&#13;', '', $row['xml']);
+			if ($checkit) {
+				$xml .= $row['xml']; 
+			} 
+			if ($i < 10 && !$checkit) {
+				$didntmakeit[] = $row['xml'];
 			}
-			
-			$xml = "<add>".$xml."</add>";
-			print_r($didntmakeit);
-			//$xml = utf8_encode($xml);
-
-				$header = array("Content-type:text/xml; charset=utf-8");
-				curl_setopt($ch, CURLOPT_URL, $post_url);
-				curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
-				curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-				curl_setopt($ch, CURLOPT_POST, 1);
-				curl_setopt($ch, CURLOPT_POSTFIELDS, $xml);
-				curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-				curl_setopt($ch, CURLINFO_HEADER_OUT, 1);
-
-				$data = curl_exec($ch);
-				var_dump($data);
-				if (curl_errno($ch)) {
-				   throw new Exception ( "curl_error:" . curl_error($ch) );
-				} else {
-				   //curl_close($ch);
-				   echo "got this far";
-				   curl_close($ch);
-				   echo "done";
-				   return TRUE;
-			}	
+			$i++;
 		}
+		
+		$xml = "<add>".$xml."</add>";
+		print_r($didntmakeit);
+		//$xml = utf8_encode($xml);
+
+		$header = array("Content-type:text/xml; charset=utf-8");
+		curl_setopt($ch, CURLOPT_URL, $post_url);
+		curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		curl_setopt($ch, CURLOPT_POST, 1);
+		curl_setopt($ch, CURLOPT_POSTFIELDS, $xml);
+		curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+		curl_setopt($ch, CURLINFO_HEADER_OUT, 1);
+
+		$data = curl_exec($ch);
+		var_dump($data);
+		if (curl_errno($ch)) {
+		   throw new Exception ( "curl_error:" . curl_error($ch) );
+		} else {
+		   //curl_close($ch);
+		   echo "got this far";
+		   curl_close($ch);
+		   echo "done";
+		   return TRUE;
+		}	
+	}
 
 
  

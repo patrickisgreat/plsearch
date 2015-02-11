@@ -14,8 +14,7 @@ if (!$link) {
 echo "<p>Running Query..</p><br />";
 // get all the fields
 
-$lastpostidquery = 
-mysql_query('SELECT MAX(lastpostid) FROM `vbulletin`.`searchindextracking`');
+$lastpostidquery = mysql_query('SELECT MAX(threadid) FROM `vbulletin`.`searchxml`');
 
 $lastpostid = mysql_fetch_row($lastpostidquery);
 
@@ -58,18 +57,18 @@ $incrementalResult = mysql_query('
 		at.attachmentid,
 		p.attach
 	
-		FROM thread AS th
-			
-		JOIN post as p ON p.threadid = th.threadid
-		LEFT JOIN post_element AS pe ON pe.post_id = p.postid
-		LEFT JOIN post_category AS pc ON pc.post_id = p.postid
-		LEFT JOIN post_region AS pr ON pr.post_id = p.postid
-		LEFT JOIN attachment AS at ON at.contentid = p.postid
+	FROM thread AS th
+		
+	JOIN post as p ON p.threadid = th.threadid
+	LEFT JOIN post_element AS pe ON pe.post_id = p.postid
+	LEFT JOIN post_category AS pc ON pc.post_id = p.postid
+	LEFT JOIN post_region AS pr ON pr.post_id = p.postid
+	LEFT JOIN attachment AS at ON at.contentid = p.postid
 
-		WHERE (th.threadid > "'.$lastpostid[0].'")
-		GROUP BY p.postid
-		ORDER BY th.threadid, p.postid DESC
-		LIMIT 0, 40');
+	WHERE (th.threadid > "'.$lastpostid[0].'")
+	GROUP BY p.postid
+	ORDER BY th.threadid, p.postid DESC
+	LIMIT 0, 40');
 
 if (!$incrementalResult) {
 	die('Invalid query: ' . mysql_error());
@@ -82,6 +81,21 @@ $thread = array();
 $thread['threadid'] = 0;
 $thread['pagetext'] = array();
 while ($row = mysql_fetch_assoc($incrementalResult)) {
+    //exclusion of hidden forums
+  	if ($row['forumid'] == '2061' || $row['forumid'] == '2071' || $row['forumid'] == '2111' || $row['forumid'] == '2091' || $row['forumid'] == '2121' || $row['forumid'] == '2131' || $row['forumid'] == '2141' || $row['forumid'] == '2191' || $row['forumid'] == '2201' || $row['forumid'] == '3202' || $row['forumid'] == '2221' || $row['forumid'] == '2231' || 
+  		$row['forumid'] == '2231' || $row['forumid'] == '2241' || $row['forumid'] == '2251' || $row['forumid'] == '2261' || $row['forumid'] == '2271' || $row['forumid'] == '2281' || $row['forumid'] == '2291' || 
+  		$row['forumid'] == '2301' || $row['forumid'] == '2311' || $row['forumid'] == '2321' || $row['forumid'] == '2331' || $row['forumid'] == '2341' || $row['forumid'] == '2512' || $row['forumid'] == '3991' || 
+  		$row['forumid'] == '3612' || $row['forumid'] == '3692' || $row['forumid'] == '3812' || $row['forumid'] == '4091' || $row['forumid'] == '2351' || $row['forumid'] == '2361' || $row['forumid'] == '2371' || 
+  		$row['forumid'] == '3271' || $row['forumid'] == '3281' || $row['forumid'] == '1631' || $row['forumid'] == '1641' || $row['forumid'] == '1681' || $row['forumid'] == '1661' || $row['forumid'] == '1671' || 
+  		$row['forumid'] == '1691' || $row['forumid'] == '1701' || $row['forumid'] == '1761' || $row['forumid'] == '1551' || $row['forumid'] == '1771' || $row['forumid'] == '1781' || $row['forumid'] == '3192' || 
+  		$row['forumid'] == '1911' || $row['forumid'] == '1831' || $row['forumid'] == '1841' || $row['forumid'] == '1851' || $row['forumid'] == '1861' || $row['forumid'] == '1871' || $row['forumid'] == '1881' || 
+  		$row['forumid'] == '3881' || $row['forumid'] == '1821' || $row['forumid'] == '1891' || $row['forumid'] == '1901' || $row['forumid'] == '1921' || $row['forumid'] == '1931' || $row['forumid'] == '2252' || 
+  		$row['forumid'] == '3632' || $row['forumid'] == '3602' || $row['forumid'] == '3981' || $row['forumid'] == '1791' || $row['forumid'] == '1801' || $row['forumid'] == '1811' || $row['forumid'] == '1961' || 
+  		$row['forumid'] == '1971' || $row['forumid'] == '3261' || $row['forumid'] == '3291' || $row['forumid'] == '3451' || $row['forumid'] == '3271' || $row['forumid'] == '3281' || $row['forumid'] == '3541' || $row['forumid'] == '3551') 
+	{ 
+		echo "continuation";
+		continue;
+	}
     //if it is the first or the last record store it in the tracking table
     if ($i == 0) {
     	$time = date('Y-m-d H:i:s',time());
@@ -430,7 +444,6 @@ while ($row = mysql_fetch_assoc($incrementalResult)) {
 	}//if
 
    	if ($row['dateline'] != null) {
-
 		$date = strtotime("@{$row['dateline']}");
 		$new_date = gmDate("Y-m-d\TH:i:s\Z", $date); 
    		$row['dateline'] = $new_date;
@@ -448,8 +461,6 @@ while ($row = mysql_fetch_assoc($incrementalResult)) {
    		
 $i++;
 }
-
 $solr->add_document($thread);
-
 mysql_free_result($incrementalResult);
 ?>
