@@ -68,7 +68,7 @@ $incrementalResult = mysql_query('
 	WHERE (th.threadid > "'.$lastpostid[0].'")
 	GROUP BY p.postid
 	ORDER BY th.threadid, p.postid DESC
-	LIMIT 0, 40');
+	LIMIT 0, 2000');
 
 if (!$incrementalResult) {
 	die('Invalid query: ' . mysql_error());
@@ -458,9 +458,9 @@ while ($row = mysql_fetch_assoc($incrementalResult)) {
    	//doooooooooooooooooooo... .
    	$thread['pagetext'][] = $row;
  //$solr->add_document($row);
-   		
 $i++;
 }
 $solr->add_document($thread);
+//$solr->post();
 mysql_free_result($incrementalResult);
 ?>

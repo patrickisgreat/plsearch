@@ -8,7 +8,7 @@ $link = $solr->connect();
 if (!$link) {
     die('Not connected : ' . mysql_error());
 }
-$solr->post();
+$solr->post(0);
 ?>
 <html>
 <head>

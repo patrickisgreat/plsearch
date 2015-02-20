@@ -24,6 +24,13 @@
 			}
 			return $link;
 		}
+
+		/*public function connect() {
+			$pdo = new PDO($this->dbhost, $this->un, $this->pw, array(
+					PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION, 
+				));
+			$pdo->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false)
+		}*/
  
 		
 		public function stripBBCode($text_to_search) {
@@ -437,12 +444,16 @@
 			//$sending = true;
 	}
  
-	public function post() {
+	public function post($threadid) {
 		$check = new DomDocument("1.0");
 		$ch = curl_init();
 		$post_url = $this->url.'update?commit=true';
-		$query = "SELECT xml FROM searchxml";
+		$query = "SELECT xml, threadid FROM searchxml WHERE threadid > ".$threadid."";
+		$query2 = "SELECT max(threadid) FROM searchxml";
+		$maxQ = mysql_query($query2);
 		$results = mysql_query($query);
+		$maxResult = mysql_fetch_row($maxQ);
+		$maxId = $maxResult[0];
 		$xml = "";
 		$i=0;
 		$didntmakeit = array();
@@ -453,36 +464,35 @@
 			if ($checkit) {
 				$xml .= $row['xml']; 
 			} 
-			if ($i < 10 && !$checkit) {
-				$didntmakeit[] = $row['xml'];
+			if ($i == 20) {
+				$xml = "<add>".$xml."</add>";
+				$threadid = $row['threadid'];
+				$header = array("Content-type:text/xml; charset=utf-8");
+				curl_setopt($ch, CURLOPT_URL, $post_url);
+				curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
+				curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+				curl_setopt($ch, CURLOPT_POST, 1);
+				curl_setopt($ch, CURLOPT_POSTFIELDS, $xml);
+				curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+				curl_setopt($ch, CURLINFO_HEADER_OUT, 1);
+
+				$data = curl_exec($ch);
+				var_dump($data);
+				if (curl_errno($ch)) {
+				   //throw new Exception ( "curl_error:" . curl_error($ch) );
+				} else {
+				   //curl_close($ch);
+				   curl_close($ch);
+				   if ($threadid == $maxId) {
+				   		return TRUE;
+				   	} else if ($threadid < $maxId) {
+				   		$this->post($threadid);
+				   	}  
+				}
+				break;
 			}
-			$i++;
+			$i++;	
 		}
-		
-		$xml = "<add>".$xml."</add>";
-		print_r($didntmakeit);
-		//$xml = utf8_encode($xml);
-
-		$header = array("Content-type:text/xml; charset=utf-8");
-		curl_setopt($ch, CURLOPT_URL, $post_url);
-		curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-		curl_setopt($ch, CURLOPT_POST, 1);
-		curl_setopt($ch, CURLOPT_POSTFIELDS, $xml);
-		curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-		curl_setopt($ch, CURLINFO_HEADER_OUT, 1);
-
-		$data = curl_exec($ch);
-		var_dump($data);
-		if (curl_errno($ch)) {
-		   throw new Exception ( "curl_error:" . curl_error($ch) );
-		} else {
-		   //curl_close($ch);
-		   echo "got this far";
-		   curl_close($ch);
-		   echo "done";
-		   return TRUE;
-		}	
 	}
 
 
