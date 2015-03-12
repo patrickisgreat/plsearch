@@ -10,7 +10,8 @@ $solr = new Solr('http://patrickisgreat.me:8983/solr/pl2/');
 //set up the connection obj
 //$link = mysql_connect('localhost', 'vb_admin', 'Vb4AmG$');
 //$link = mysql_connect('blacqube.net', 'vb_admin', 'Vb4AmG$11');
-$link = mysql_connect('162.243.217.180', 'pbennett', 'swacuGaKur2j');
+//$link = mysql_connect('162.243.217.180', 'pbennett', 'swacuGaKur2j');
+$link = mysql_connect('privatelounge.blacqube.org', 'pbennett', 'V7eNmKzZKrRGcjb2');
 if (!$link) {
     die('Not connected : ' . mysql_error());
 }

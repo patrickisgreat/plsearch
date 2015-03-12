@@ -252,6 +252,7 @@
 									$catPath = 'c_row_lg';
 			    				}
 			    				if($value[0]!=''){
+			        				//$value[0] = substr(strrchr(rtrim($value[0], '/'), '/'), 1);
 			        				$frontEndImagePath = 'http://www.mercedes-amg.com/privatelounge/'.$value[0]  . $catPath .'/01.jpg';
 			        				$newPageTextNode = $dom->createElement('field');
 									$newPageTextNode->setAttribute("name", 'element_path');
@@ -259,12 +260,9 @@
 							   		$node->appendChild($newPageTextNode);
 			        			}
 			        			//  Scan through inner loop
-
 			        			//print_r($value)''
 			        			// ==== \/
 			        			// this where I left off.. only need to extract the youtube id then set it below
-			        			
-			        			
 			        			//find the string
 			        			if ($isVid == 1) {
 			        				$youtube = $this->extractYouTubeID($value);
@@ -278,7 +276,7 @@
 			        		} else {
 			        			if($value!=''){
 			        			//echo ('running up here');
-								$frontEndImagePath = 'http://www.mercdes-amg.com/privatelounge/'.$value . $catPath .'/01.jpg';
+								$frontEndImagePath = 'http://www.mercedes-amg.com/privatelounge/'.$value . $catPath .'/01.jpg';
 								}
 			        		}
 							
@@ -286,12 +284,20 @@
 						case 'pagetext':
 							preg_match_all("/(\[ATTACH\](?<digit>[0-9]+)\[\/ATTACH\])/", $value, $matches);
 							if(isset($matches['digit'][0])){
-								$pageTextImageURL = 'http://www.mercedes-amg.com/privatelounge/images/image.php?' .$matches['digit'][0];
+								//--production-->
+								//$pageTextImageURL = 'http://www.mercedes-amg.com/privatelounge/images/image.php?' .$matches['digit'][0];
+								
+								//--testing-->
+								$pageTextImageURL = 'http://162.243.217.180/privatelounge/image.php?' .$matches['digit'][0];
 							}
 							if($pageTextImageURL){
 								preg_match_all("/\[IMG\](?<image>https?:\/\/.*\.(?:png|jpg))\[\/IMG\]/", $value, $matches);
 								if(isset($matches['image'][0])){
-									$pageTextImagePath = 'http://www.mercedes-amg.com/privatelounge/images/image.php?' .$matches['image'][0];
+									//--production-->
+									//$pageTextImagePath = 'http://www.mercedes-amg.com/privatelounge/images/image.php?' .$matches['image'][0];
+									
+									//--testing-->
+									$pageTextImagePath = 'http://162.243.217.180/privatelounge/image.php?' .$matches['image'][0];
 								}
 							}
 						break;
@@ -309,7 +315,8 @@
 									$value = $pageTextImagePath;
 								}
 							}elseif($value==1){
-								$value = 'http://www.mercedes-amg.com/privatelounge/images/image.php?' .$attachmentid;
+								//$value = 'http://www.mercedes-amg.com/privatelounge/images/image.php?' .$attachmentid;
+								$value = 'http://162.243.217.180/privatelounge/image.php?' .$attachmentid;
 							}
 
 						break;
@@ -444,6 +451,7 @@
 			//$sending = true;
 	}
  
+
 	public function post($threadid) {
 		$check = new DomDocument("1.0");
 		$ch = curl_init();
@@ -456,15 +464,19 @@
 		$maxId = $maxResult[0];
 		$xml = "";
 		$i=0;
+		$checkCount = 0;
 		$didntmakeit = array();
 		$numResults = mysql_num_rows($results);
+		echo $numResults;
+		echo "<br />";
 		while ($row = mysql_fetch_assoc($results)) {
 			$checkit = $check->loadXML($row['xml']);
 			str_replace('&#13;', '', $row['xml']);
 			if ($checkit) {
-				$xml .= $row['xml']; 
+				$xml .= $row['xml'];
+				$checkCount++; 
 			} 
-			if ($i == 20) {
+			if ($i == 2000) {
 				$xml = "<add>".$xml."</add>";
 				$threadid = $row['threadid'];
 				$header = array("Content-type:text/xml; charset=utf-8");
@@ -477,7 +489,8 @@
 				curl_setopt($ch, CURLINFO_HEADER_OUT, 1);
 
 				$data = curl_exec($ch);
-				var_dump($data);
+				//var_dump($data);
+				echo "<br />";
 				if (curl_errno($ch)) {
 				   //throw new Exception ( "curl_error:" . curl_error($ch) );
 				} else {
@@ -493,6 +506,9 @@
 			}
 			$i++;	
 		}
+		$checkCount+=$checkCount;
+		echo $checkCount;
+		echo "<br />";
 	}
 
 

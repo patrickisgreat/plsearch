@@ -105,9 +105,6 @@ while ($row = mysql_fetch_assoc($result)) {
 		$thread['parentid'] = $row['parentid'];
 		$thread['title'] = $row['title'];
 		$thread['forumid'] = $row['forumid'];
-		//echo $row['forumid'] ."<br>\n";
-		/*$thread['dateline'] = $row['dateline'];
-		$thread['lastpost'] = $row['lastpost'];*/
 		$thread['pagetext'] = array();
 		//set language to english
 		switch ($row['forumid']) { 

@@ -65,11 +65,12 @@ $incrementalResult = mysql_query('
 	LEFT JOIN post_region AS pr ON pr.post_id = p.postid
 	LEFT JOIN attachment AS at ON at.contentid = p.postid
 
-	WHERE (th.threadid > "'.$lastpostid[0].'")
+	WHERE (th.threadid = 86941)
 	GROUP BY p.postid
 	ORDER BY th.threadid, p.postid DESC
-	LIMIT 0, 2000');
-
+	WHERE (th.threadid > "'.$lastpostid[0].'")
+	');
+//
 if (!$incrementalResult) {
 	die('Invalid query: ' . mysql_error());
 }
@@ -451,6 +452,10 @@ while ($row = mysql_fetch_assoc($incrementalResult)) {
    	}
 
    	$row['element'] = explode(",", $row['element']);
+   	//sometimes the explode es no working so we strip everything after the last slash
+   	if (strstr($row['element'][0], '/') != false) {
+   		$row['element'][0] = substr(strrchr(rtrim($row['element'][0], '/'), '/'), 1);	
+   	}
    	$row['post_type'] = explode(",", $row['post_type']);
    	$row['element_type'] = explode(",", $row['element_type']);
    	$row['region_id'] = explode(",", $row['region_id']);
