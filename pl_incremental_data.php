@@ -65,12 +65,15 @@ $incrementalResult = mysql_query('
 	LEFT JOIN post_region AS pr ON pr.post_id = p.postid
 	LEFT JOIN attachment AS at ON at.contentid = p.postid
 
-	WHERE (th.threadid = 86941)
+	WHERE (th.threadid > "'.$lastpostid[0].'")
 	GROUP BY p.postid
 	ORDER BY th.threadid, p.postid DESC
-	WHERE (th.threadid > "'.$lastpostid[0].'")
 	');
 //
+//WHERE (p.visible = 1 AND pc.cat_id = 3100)
+//117401
+//119171
+//WHERE (th.threadid = 117381)
 if (!$incrementalResult) {
 	die('Invalid query: ' . mysql_error());
 }
@@ -94,7 +97,7 @@ while ($row = mysql_fetch_assoc($incrementalResult)) {
   		$row['forumid'] == '3632' || $row['forumid'] == '3602' || $row['forumid'] == '3981' || $row['forumid'] == '1791' || $row['forumid'] == '1801' || $row['forumid'] == '1811' || $row['forumid'] == '1961' || 
   		$row['forumid'] == '1971' || $row['forumid'] == '3261' || $row['forumid'] == '3291' || $row['forumid'] == '3451' || $row['forumid'] == '3271' || $row['forumid'] == '3281' || $row['forumid'] == '3541' || $row['forumid'] == '3551') 
 	{ 
-		echo "continuation";
+		//echo "continuation";
 		continue;
 	}
     //if it is the first or the last record store it in the tracking table
@@ -452,10 +455,6 @@ while ($row = mysql_fetch_assoc($incrementalResult)) {
    	}
 
    	$row['element'] = explode(",", $row['element']);
-   	//sometimes the explode es no working so we strip everything after the last slash
-   	if (strstr($row['element'][0], '/') != false) {
-   		$row['element'][0] = substr(strrchr(rtrim($row['element'][0], '/'), '/'), 1);	
-   	}
    	$row['post_type'] = explode(",", $row['post_type']);
    	$row['element_type'] = explode(",", $row['element_type']);
    	$row['region_id'] = explode(",", $row['region_id']);

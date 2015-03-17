@@ -245,22 +245,21 @@
 						case 'element':
 							//  Check type for nested arrays
 			    			if (is_array($value)){
-
-			    				//http://www.mercdes-amg.com/privatelounge/' .$value .'h2ero_sm/01.jpg';
-
 			    				if(!isset($catPath)){
 									$catPath = 'c_row_lg';
 			    				}
 			    				if($value[0]!=''){
-			        				//$value[0] = substr(strrchr(rtrim($value[0], '/'), '/'), 1);
+			        				if (strstr($value[0], '/') != false) { 
+			        					$xmlVal =  substr(strrchr(rtrim($value[0], '/'), '/'), 1);
+			        				} else {
+			        					$xmlVal = $value[0];
+			        				}
 			        				$frontEndImagePath = 'http://www.mercedes-amg.com/privatelounge/'.$value[0]  . $catPath .'/01.jpg';
 			        				$newPageTextNode = $dom->createElement('field');
 									$newPageTextNode->setAttribute("name", 'element_path');
-									$newPageTextNode->nodeValue = $value[0];
+									$newPageTextNode->nodeValue = $xmlVal;
 							   		$node->appendChild($newPageTextNode);
 			        			}
-			        			//  Scan through inner loop
-			        			//print_r($value)''
 			        			// ==== \/
 			        			// this where I left off.. only need to extract the youtube id then set it below
 			        			//find the string
@@ -328,14 +327,8 @@
 						default:
 						//echo $field_name;
 				} 
-
-					//$fields .= sprintf('<field name="%s">%s</field>'."\n\r",$field_name, $value);
-					//create new node for each field in $doc
-			    	//solr needs very strict encoding and escaping
-			    	//$value = htmlspecialchars($value);
-			    	//$value = utf8_encode($value);
-
 			    	if($field_name == 'pagetext'){
+
 				    	$value = self::stripBBCode($value);
 			    		$value = self::url_cleaner($value);
 			    		$value = htmlspecialchars($value, ENT_NOQUOTES, "UTF-8");
@@ -364,7 +357,7 @@
 	    $sanitaryPageText = $doc['pagetext'][$count]['pagetext'];
 	    $sanitaryPageText = self::stripBBCode($sanitaryPageText);
 	    $sanitaryPageText = self::url_cleaner($sanitaryPageText);
-	    $sanitaryPageText = htmlspecialchars($sanitaryPageText, ENT_NOQUOTES, "UTF-8");
+	    $sanitaryPageText = htmlspecialchars($sanitaryPageText, ENT_QUOTES, "UTF-8");
 	    //$sanitaryPageText = utf8_encode($sanitaryPageText);
 
 	    //create the threadpagetext field
@@ -385,8 +378,6 @@
     	$newnode->nodeValue = $isVid;
     	$node->appendChild($newnode);
 			
-			//$node->appendChild($newnode);
-	    	//$base_node->appendChild($node);
 			foreach ($postArray as $field_name => $value){
 
 				switch($field_name){
@@ -418,41 +409,40 @@
 					case 'visible':
 					case 'allowsmilie':
 				    	
-				    	
-			    	$value = self::stripBBCode($value);
-		    		$value = self::url_cleaner($value);
-		    		$value = htmlspecialchars($value, ENT_NOQUOTES, "UTF-8");
-		    		//$value = utf8_encode($postArray[$field_name]);
+				    if (is_array($value) === false) {	
+				    	$val = self::stripBBCode($value);
+		    			$val = self::url_cleaner($value);
+		    			$val = htmlspecialchars($value, ENT_QUOTES, "UTF-8");
+		    			$val = preg_replace('/[\x00-\x1F\x80-\xFF]/', '', $value); 
+				    } else {
+				    	$val = $value[0];
+				    }	
+			   
 			    	$newnode = $dom->createElement('field');
 			    	$newnode->setAttribute("name", $field_name);
-			    	$newnode->nodeValue = $value;
+			    	$newnode->nodeValue = $val;
 			    	$node->appendChild($newnode);
 			    	$base_node->appendChild($node);
 		    		break;
 		    	}
 
 		    }
-		    //print_r($postArray);
-			
-			//gimme the xml -- building on each execution
 			umask();
-			$query = sprintf("INSERT INTO searchxml (xml, created, threadid) VALUES ('%s', '%s', '%s')", 
-				mysql_real_escape_string($dom->saveXML($base_node)),
-				mysql_real_escape_string(date('Y-m-d')),
-				mysql_real_escape_string($postArray['threadid'])
+			$xml = $dom->saveXML($base_node);
+			$query = sprintf('INSERT INTO searchxml (xml, created, threadid) VALUES ("%s", "%s", "%s")', 
+				mysql_real_escape_string($xml),
+				mysql_real_escape_string(date("Y-m-d")),
+				mysql_real_escape_string($postArray["threadid"])
 				);
-			$results = mysql_query($query);
-			//$dom->save('storage.xml');
-			//DEPRECATED
-			//print_r($dom);
-			//die();
-			//echo ("<br><br><br><br><br>\n\r\n\r\n\r\n\r\n\r");
-			//return sprintf('<add><doc>%s</doc></add>',$fields);
-			//$sending = true;
+			$res = mysql_query($query);
+			if (!$res) {
+				die("Invalid Query :" . mysql_error());
+			}
 	}
  
 
 	public function post($threadid) {
+		unset($xml);
 		$check = new DomDocument("1.0");
 		$ch = curl_init();
 		$post_url = $this->url.'update?commit=true';
@@ -470,13 +460,17 @@
 		echo $numResults;
 		echo "<br />";
 		while ($row = mysql_fetch_assoc($results)) {
+			$replace = array('&#13;', '-14&#13;', '-&#13;');
+			str_replace($replace, '', $row['xml']);
 			$checkit = $check->loadXML($row['xml']);
-			str_replace('&#13;', '', $row['xml']);
 			if ($checkit) {
 				$xml .= $row['xml'];
-				$checkCount++; 
-			} 
-			if ($i == 2000) {
+				//$checkCount++; 
+			} else {
+				//$xml .= $row['xml'];
+				$didntmakeit[] = $row;
+			}
+			if ($i == 2000 || $i == 1841) {
 				$xml = "<add>".$xml."</add>";
 				$threadid = $row['threadid'];
 				$header = array("Content-type:text/xml; charset=utf-8");
@@ -487,9 +481,9 @@
 				curl_setopt($ch, CURLOPT_POSTFIELDS, $xml);
 				curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
 				curl_setopt($ch, CURLINFO_HEADER_OUT, 1);
-
 				$data = curl_exec($ch);
-				//var_dump($data);
+				echo "<br />";
+				var_dump($data);
 				echo "<br />";
 				if (curl_errno($ch)) {
 				   //throw new Exception ( "curl_error:" . curl_error($ch) );
@@ -497,6 +491,8 @@
 				   //curl_close($ch);
 				   curl_close($ch);
 				   if ($threadid == $maxId) {
+				   		echo "TRUE";
+				   		echo "<br />";
 				   		return TRUE;
 				   	} else if ($threadid < $maxId) {
 				   		$this->post($threadid);
@@ -505,10 +501,8 @@
 				break;
 			}
 			$i++;	
-		}
-		$checkCount+=$checkCount;
-		echo $checkCount;
-		echo "<br />";
+		}	
+		print_r($didntmakeit);
 	}
 
 
