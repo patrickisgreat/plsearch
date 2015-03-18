@@ -65,15 +65,17 @@ $incrementalResult = mysql_query('
 	LEFT JOIN post_region AS pr ON pr.post_id = p.postid
 	LEFT JOIN attachment AS at ON at.contentid = p.postid
 
-	WHERE (th.threadid > "'.$lastpostid[0].'")
+	
 	GROUP BY p.postid
 	ORDER BY th.threadid, p.postid DESC
+	LIMIT 0, 4000
 	');
 //
 //WHERE (p.visible = 1 AND pc.cat_id = 3100)
 //117401
 //119171
 //WHERE (th.threadid = 117381)
+//WHERE (th.threadid > "'.$lastpostid[0].'")
 if (!$incrementalResult) {
 	die('Invalid query: ' . mysql_error());
 }

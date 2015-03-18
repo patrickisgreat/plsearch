@@ -218,6 +218,10 @@
 						case 'cat_ids':
 							$highestCat = max(explode(",", $value));
 							switch($highestCat){
+								case "":
+									$isArticle = 1;
+								case !"": 
+									$isArticle = 0;
 								case 1303:
 								case 2300:
 								case 3011:
@@ -377,6 +381,11 @@
     	$newnode->setAttribute("name", 'isvideo');
     	$newnode->nodeValue = $isVid;
     	$node->appendChild($newnode);
+
+    	$newnode = $dom->createElement('field');
+    	$newnode->setAttribute("name", 'isArticle');
+    	$newnode->nodeValue = $isArticle;
+    	$node->appendChild($newnode);
 			
 			foreach ($postArray as $field_name => $value){
 
@@ -443,10 +452,11 @@
 
 	public function post($threadid) {
 		unset($xml);
+		mysql_free_result($query);
 		$check = new DomDocument("1.0");
 		$ch = curl_init();
 		$post_url = $this->url.'update?commit=true';
-		$query = "SELECT xml, threadid FROM searchxml WHERE threadid > ".$threadid."";
+		$query = "SELECT xml, threadid FROM searchxml WHERE threadid > ".$threadid." LIMIT 0, 150";
 		$query2 = "SELECT max(threadid) FROM searchxml";
 		$maxQ = mysql_query($query2);
 		$results = mysql_query($query);
@@ -455,11 +465,11 @@
 		$xml = "";
 		$i=0;
 		$checkCount = 0;
-		$didntmakeit = array();
 		$numResults = mysql_num_rows($results);
 		echo $numResults;
 		echo "<br />";
 		while ($row = mysql_fetch_assoc($results)) {
+			//solr hates these characters
 			$replace = array('&#13;', '-14&#13;', '-&#13;');
 			str_replace($replace, '', $row['xml']);
 			$checkit = $check->loadXML($row['xml']);
@@ -467,10 +477,9 @@
 				$xml .= $row['xml'];
 				//$checkCount++; 
 			} else {
-				//$xml .= $row['xml'];
-				$didntmakeit[] = $row;
+				
 			}
-			if ($i == 2000 || $i == 1841) {
+			if ($i == 100) {
 				$xml = "<add>".$xml."</add>";
 				$threadid = $row['threadid'];
 				$header = array("Content-type:text/xml; charset=utf-8");
@@ -491,8 +500,6 @@
 				   //curl_close($ch);
 				   curl_close($ch);
 				   if ($threadid == $maxId) {
-				   		echo "TRUE";
-				   		echo "<br />";
 				   		return TRUE;
 				   	} else if ($threadid < $maxId) {
 				   		$this->post($threadid);
@@ -502,7 +509,6 @@
 			}
 			$i++;	
 		}	
-		print_r($didntmakeit);
 	}
 
 
