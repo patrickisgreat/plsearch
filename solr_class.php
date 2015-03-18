@@ -287,7 +287,7 @@
 								//$pageTextImageURL = 'http://www.mercedes-amg.com/privatelounge/images/image.php?' .$matches['digit'][0];
 								
 								//--testing-->
-								$pageTextImageURL = 'http://162.243.217.180/privatelounge/image.php?' .$matches['digit'][0];
+								$pageTextImageURL = 'http://mercedes-amg.com/privatelounge/images/image.php?' .$matches['digit'][0];
 							}
 							if($pageTextImageURL){
 								preg_match_all("/\[IMG\](?<image>https?:\/\/.*\.(?:png|jpg))\[\/IMG\]/", $value, $matches);
@@ -296,7 +296,7 @@
 									//$pageTextImagePath = 'http://www.mercedes-amg.com/privatelounge/images/image.php?' .$matches['image'][0];
 									
 									//--testing-->
-									$pageTextImagePath = 'http://162.243.217.180/privatelounge/image.php?' .$matches['image'][0];
+									$pageTextImagePath = 'http://mercedes-amg.com/privatelounge/images/image.php?' .$matches['image'][0];
 								}
 							}
 						break;
@@ -315,7 +315,7 @@
 								}
 							}elseif($value==1){
 								//$value = 'http://www.mercedes-amg.com/privatelounge/images/image.php?' .$attachmentid;
-								$value = 'http://162.243.217.180/privatelounge/image.php?' .$attachmentid;
+								$value = 'http://mercedes-amg.com/privatelounge/images/image.php?' .$attachmentid;
 							}
 
 						break;
