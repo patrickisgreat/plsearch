@@ -44,8 +44,8 @@ if (mysql_num_rows($result) == 0) {
 $row = mysql_fetch_assoc($result);
 switch($row['extension']){
 	case 'jpg':
-		$path = fetch_attachment_path($row['userid'], $row['attachmentid'], $attachmentDIR );
-		
+		$path = fetch_attachment_path($row['userid'], $row['filedataid'], $attachmentDIR );
+	
 		if(file_exists($path) && is_file($path))
 		{
 			header("Content-Type: image/jpeg");
@@ -62,11 +62,11 @@ function blankImg(){
 	imagejpeg($im);
 }
 
-function fetch_attachment_path($userid, $attachmentid = 0, $attachmentDIR ='')
+function fetch_attachment_path($userid, $filedataid = 0, $attachmentDIR ='')
 {
 	$filepath =& $attachmentDIR;
 	$path = $filepath . '/' . implode('/', preg_split('//', $userid,  -1, PREG_SPLIT_NO_EMPTY));
-	$path .= '/' . $attachmentid . '.attach';
+	$path .= '/' . $filedataid . '.attach';
 
 	return $path;
 }
