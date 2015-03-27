@@ -211,11 +211,33 @@
 		    $attachmentid = 0;
 		    $isVid = 0;
 		    foreach ($doc['pagetext'] as $pagetext){
-		    	if ($pagetext['element_type'][0] == 1) {
-		    		$switch = true;
+		    	//sometimes links are broken because we're missing element data or we have incorrect element type order
+		    	//so we check what's in this array to know what to set the slug to in the xml
+		    	if ($pagetext['element_type'][1] == 7) {
+		    		$switch == false;
+		    	} else if ($pagetext['element_type'][1] == 2) {
+		    		$switch == true;
 		    	} else {
-		    		$switch = false;
+		    		$switch == 'alt';
 		    	}
+		    	/*echo "This is the ThreadID";
+		    	echo "<br />";
+		    	echo "<br />";
+		    	echo $pagetext['threadid'];
+		    	echo "<br />";
+		    	echo "<br />";
+		    	echo "This is the element_type array";
+		    	echo "<br />";
+		    	echo "<br />";
+		    	print_r($pagetext['element_type']);
+		    	echo "<br />";
+		    	echo "<br />";
+		    	echo "This is the element array";
+		    	echo "<br />";
+		    	echo "<br />";
+		    	print_r($pagetext['element']);
+		    	echo "<br />";
+		    	echo "<br />";*/
 				foreach ($pagetext as $field_name => $value){
 					//if ($field_name != 'pagetext') continue;
 					switch($field_name){
@@ -266,19 +288,20 @@
 			        				} else {
 			        					$xmlVal = $value[0];
 			        				}*/
+			        				//taking the logic from above we're setting the slug in the xml -- we either strip it out of the image path from element_type 1 or
+			        				//we just set it as the slug if it's in the array.
 			        				if ($switch == true) {
 			        					$xmlVal = $value[1];
 			        					echo $xmlVal;
 			        					echo "<br />";
 			        				} else if ($switch == false) {
-			        					$xmlVal == $value[0];
+			        					$xmlVal =  substr(strrchr(rtrim($value[0], '/'), '/'), 1);
 			        					echo $xmlVal;
 			        					echo "<br />";
+			        				} else if ($switch == 'alt') {
+			        					//in the javaScript if this val is failSafe we'll switch for the thread link
+			        					$xmlVal = "failSafe";
 			        				}
-			        				
-			        				echo $xmlVal;
-			        				echo "<br />";
-			        				echo "<br />";
 			        				$frontEndImagePath = 'http://www.mercedes-amg.com/privatelounge/'.$value[0]  . $catPath .'/01.jpg';
 			        				$newPageTextNode = $dom->createElement('field');
 									$newPageTextNode->setAttribute("name", 'element_path');
