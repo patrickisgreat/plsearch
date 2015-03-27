@@ -9,6 +9,7 @@
 			$this->un = $un;
 			$this->pw = $pw;
 			$this->usedb = $usedb;
+			date_default_timezone_set('Europe/Berlin');
 		}
  
 		//database connect
@@ -210,18 +211,24 @@
 		    $attachmentid = 0;
 		    $isVid = 0;
 		    foreach ($doc['pagetext'] as $pagetext){
-		    	
+		    	if ($pagetext['element_type'][0] == 1) {
+		    		$switch = true;
+		    	} else {
+		    		$switch = false;
+		    	}
 				foreach ($pagetext as $field_name => $value){
-
 					//if ($field_name != 'pagetext') continue;
 					switch($field_name){
 						case 'cat_ids':
 							$highestCat = max(explode(",", $value));
+							//building a way to check if this is an article or not
+							//might need to build an array w/ elements as well
+							if ($highestCat == "") {
+								$isArticle = 0;
+							} else if ($highestCat !== "") {
+								$isArticle = 1;
+							}
 							switch($highestCat){
-								case "":
-									$isArticle = 1;
-								case !"": 
-									$isArticle = 0;
 								case 1303:
 								case 2300:
 								case 3011:
@@ -229,6 +236,7 @@
 									break;
 								case 3100:
 									$isVid = 1;
+									echo 'is a video!';
 									break;
 									//could use something here to know if its a video????
 								case 1103:
@@ -253,11 +261,24 @@
 									$catPath = 'c_row_lg';
 			    				}
 			    				if($value[0]!=''){
-			        				if (strstr($value[0], '/') != false) { 
+			        				/*if (strstr($value[0], '/') != false) { 
 			        					$xmlVal =  substr(strrchr(rtrim($value[0], '/'), '/'), 1);
 			        				} else {
 			        					$xmlVal = $value[0];
+			        				}*/
+			        				if ($switch == true) {
+			        					$xmlVal = $value[1];
+			        					echo $xmlVal;
+			        					echo "<br />";
+			        				} else if ($switch == false) {
+			        					$xmlVal == $value[0];
+			        					echo $xmlVal;
+			        					echo "<br />";
 			        				}
+			        				
+			        				echo $xmlVal;
+			        				echo "<br />";
+			        				echo "<br />";
 			        				$frontEndImagePath = 'http://www.mercedes-amg.com/privatelounge/'.$value[0]  . $catPath .'/01.jpg';
 			        				$newPageTextNode = $dom->createElement('field');
 									$newPageTextNode->setAttribute("name", 'element_path');
@@ -343,8 +364,10 @@
 			    		$node->appendChild($newPageTextNode);
 			    	}else{
 			    		if(isset($postArray[$field_name])){
-			    			if(strlen($postArray[$field_name]) < strlen($value)){
-			    				$postArray[$field_name] = $value;
+			    			if( is_string($postArray[$field_name]) && is_string($value) ){
+				    			if(strlen($postArray[$field_name]) < strlen($value)){
+				    				$postArray[$field_name] = $value;
+				    			}
 			    			}
 			    		}else{
 			    			$postArray[$field_name] = $value;
@@ -449,25 +472,19 @@
 			}
 	}
  
-
 	public function post($threadid) {
-		unset($xml);
-		mysql_free_result($query);
+		$xml = null;
 		$check = new DomDocument("1.0");
-		$ch = curl_init();
 		$post_url = $this->url.'update?commit=true';
-		$query = "SELECT xml, threadid FROM searchxml WHERE threadid > ".$threadid." LIMIT 0, 150";
-		$query2 = "SELECT max(threadid) FROM searchxml";
+		$query = "SELECT xml, threadid FROM searchxml WHERE threadid > ".$threadid."";
+		$query2 = "SELECT max(threadid) FROM searchxml LIMIT 0, 1";
 		$maxQ = mysql_query($query2);
 		$results = mysql_query($query);
 		$maxResult = mysql_fetch_row($maxQ);
 		$maxId = $maxResult[0];
-		$xml = "";
 		$i=0;
-		$checkCount = 0;
 		$numResults = mysql_num_rows($results);
-		echo $numResults;
-		echo "<br />";
+		$didntmakeit = array();
 		while ($row = mysql_fetch_assoc($results)) {
 			//solr hates these characters
 			$replace = array('&#13;', '-14&#13;', '-&#13;');
@@ -475,40 +492,57 @@
 			$checkit = $check->loadXML($row['xml']);
 			if ($checkit) {
 				$xml .= $row['xml'];
-				//$checkCount++; 
 			} else {
-				
+				//you can catch what didn't make it here if you want to
+				//turning off for now to save memory
+				//$didntmakeit[] = $row;
 			}
-			if ($i == 100) {
+			//count up before recursing
+			if ($i == 2000 || $i == 1841) {
+				$ch = curl_init();
 				$xml = "<add>".$xml."</add>";
 				$threadid = $row['threadid'];
 				$header = array("Content-type:text/xml; charset=utf-8");
-				curl_setopt($ch, CURLOPT_URL, $post_url);
-				curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
-				curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-				curl_setopt($ch, CURLOPT_POST, 1);
-				curl_setopt($ch, CURLOPT_POSTFIELDS, $xml);
-				curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-				curl_setopt($ch, CURLINFO_HEADER_OUT, 1);
-				$data = curl_exec($ch);
-				echo "<br />";
-				var_dump($data);
-				echo "<br />";
+					curl_setopt($ch, CURLOPT_URL, $post_url);
+					curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
+					curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+					curl_setopt($ch, CURLOPT_POST, 1);
+					curl_setopt($ch, CURLOPT_POSTFIELDS, $xml);
+					curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+					curl_setopt($ch, CURLINFO_HEADER_OUT, 1);
+					$data = curl_exec($ch);
+					echo "<br />";
+					//just echo curl data so we know something made it's way to SOLR
+					var_dump($data);
+					echo "<br />";
+				//curl error ?
 				if (curl_errno($ch)) {
-				   //throw new Exception ( "curl_error:" . curl_error($ch) );
+				   throw new Exception ( "curl_error:" . curl_error($ch) );
+				//no error?
 				} else {
-				   //curl_close($ch);
+				   //clouse out connection
 				   curl_close($ch);
+				   //exit condition -->
 				   if ($threadid == $maxId) {
 				   		return TRUE;
+				   	//recurse onward-->
 				   	} else if ($threadid < $maxId) {
+
+				   		mysql_free_result($results);
+						mysql_free_result($maxQ);	
+				   		unset($ch);
+				   		unset($xml);
+				   		unset($check);
+				   		unset($results);
+				   		//unset($didntmakeit);
 				   		$this->post($threadid);
 				   	}  
 				}
-				break;
+			//auxillary break
+			break;
 			}
-			$i++;	
-		}	
+		$i++;	
+		}
 	}
 
 
