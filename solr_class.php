@@ -214,9 +214,9 @@
 		    	//sometimes links are broken because we're missing element data or we have incorrect element type order
 		    	//so we check what's in this array to know what to set the slug to in the xml
 		    	if ($pagetext['element_type'][1] == 7) {
-		    		$switch == false;
+		    		$switch = false;
 		    	} else if ($pagetext['element_type'][1] == 2) {
-		    		$switch == true;
+		    		$switch = true;
 		    	} else {
 		    		$switch == 'alt';
 		    	}

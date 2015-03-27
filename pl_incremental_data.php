@@ -73,11 +73,12 @@ $incrementalResult = mysql_query('
 //some useful switches as a tesKit
 //
 //WHERE (p.visible = 1 AND pc.cat_id = 3100)
-//WHERE (th.threadid = 134621)
+//	WHERE (th.threadid = 54152)
 //WHERE (th.threadid = 117381)
 //WHERE (pc.cat_id = 3100)
 //WHERE (th.threadid = 134621)
 //2015_GT_Dreamcar_0130_en
+//
 if (!$incrementalResult) {
 	die('Invalid query: ' . mysql_error());
 }
